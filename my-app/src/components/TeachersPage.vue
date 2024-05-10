@@ -57,9 +57,9 @@
               <template v-slot:item="{ item }">
                 <tr>
                   <td>{{ item._id }}</td>
-                  <td>{{ item.nombre }}</td>
-                  <td>{{ item.apellido }}</td>
                   <td>{{ item.correo }}</td>
+                  <td>{{ item.apellido }}</td>
+                  <td>{{ item.nombre }}</td>
                   <td>
                     <v-btn
                       small
