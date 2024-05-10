@@ -55,9 +55,7 @@
                 </v-toolbar>
               </template>
               <template v-slot:item="{ item }">
-                <tr>
-                  <!-- <td>{{ item._id }}</td> Remove this line -->
-                  <!-- Display other fields dynamically -->
+                <tr @click="handleRowClick(item)" class="clickable-row">
                   <td v-for="(value, key) in item" :key="key">
                     {{ value }}
                   </td>
@@ -66,16 +64,17 @@
                       icon
                       small
                       color="blue darken-2"
-                      @click="editUser(item)"
+                      @click="editUser(item, $event)"
                       style="width: 30px; height: 30px; margin-right: 5px"
                     >
                       <v-icon style="font-size: 18px">mdi-pencil</v-icon>
                     </v-btn>
+
                     <v-btn
                       icon
                       small
                       color="red darken-2"
-                      @click="deleteUser(item._id)"
+                      @click="deleteUser(item._id, $event)"
                       style="width: 30px; height: 30px; margin-right: 5px"
                     >
                       <v-icon style="font-size: 18px">mdi-delete</v-icon>
@@ -220,10 +219,10 @@ export default {
           this.$router.push('/admin')
           break
         case 1:
-          this.$router.push('/students')
+          this.$router.push('/admin/students')
           break
         case 2:
-          this.$router.push('/Teachers')
+          this.$router.push('/admin/Teachers')
           break
         default:
           break
@@ -231,8 +230,14 @@ export default {
     },
     logout () {
       // Logic to logout the user
+      // For example, you can clear any user data or tokens stored in localStorage
+      localStorage.removeItem('token')
+
+      // Redirect the user to the login page
+      this.$router.push('/login')
     },
-    editUser (student) {
+    editUser (student, event) {
+      event.stopPropagation() // Stop event propagation
       this.editedStudent = { ...student } // Copy student data to editedStudent
       this.editDialog = true
     },
@@ -277,7 +282,8 @@ export default {
     cancelCreate () {
       this.createDialog = false
     },
-    async deleteUser (userId) {
+    async deleteUser (userId, event) {
+      event.stopPropagation() // Stop event propagation
       try {
         const response = await axios.delete(
           `http://localhost:3000/users/${userId}`
@@ -288,9 +294,19 @@ export default {
         console.error('Error deleting user:', error)
       }
     },
+
     selectProject (project) {
       this.newStudent.project = project.name // Set the selected project name
       this.projectMenu = false // Close the dropdown menu
+    },
+    handleRowClick (item) {
+      // Handle row click event here
+      console.log('Row clicked:', item)
+      // Navigate to a new page and pass the user's ID as route parameters
+      this.$router.push({
+        name: 'UserDetails',
+        params: { userId: item._id }
+      })
     }
   },
   mounted () {
@@ -303,5 +319,10 @@ export default {
 <style scoped>
 .v-btn i {
   color: white;
+}
+
+.clickable-row:hover {
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>

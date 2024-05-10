@@ -48,6 +48,8 @@ app.post("/login", userController.login);
 
 // Route for user registration
 app.post("/register", userController.register);
+// Route for fetching a user by ID
+app.get("/users/:id", userController.getUserById);
 app.put("/users/:id", userController.updateUser);
 app.delete("/users/:id", userController.deleteUser);
 
@@ -56,6 +58,7 @@ app.post("/logout", userController.logout);
 
 // Route for projects
 app.get("/projects", projectController.projects);
+app.get("/projects/:id", projectController.getProjectById);
 app.put("/projects/:id", projectController.updateProject);
 app.delete("/projects/:id", projectController.deleteProject);
 app.post("/projects", projectController.createProject);

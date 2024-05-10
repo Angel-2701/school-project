@@ -75,3 +75,22 @@ exports.createProject = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// Get a project by ID
+exports.getProjectById = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+
+    // Find the project by its ID
+    const project = await Project.findById(projectId);
+
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    res.status(200).json(project);
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};

@@ -9,22 +9,25 @@ exports.login = async (req, res) => {
   try {
     // Validate user credentials
     const { correo, contraseña } = req.body;
-    const isValid = await isValidUser(correo, contraseña);
+    const { isValid, nombre, role, id } = await validateUserAndRole(
+      correo,
+      contraseña
+    );
 
     if (isValid) {
-      const role = await getRole(correo); // Implement your own function to determine the user's role
-
       // If credentials are valid, generate JWT token
       const token = jwt.sign({ correo, rol: role }, "your-secret-key", {
         expiresIn: "1h",
       });
 
-      // Send JWT token back to the client
+      // Send JWT token and user info back to the client
       res.status(200).json({
         success: "Valid credentials",
         correo: correo,
+        nombre: nombre,
         rol: role,
         token,
+        id,
       });
     } else {
       // If credentials are invalid, send error response
@@ -33,6 +36,26 @@ exports.login = async (req, res) => {
   } catch (error) {
     // Handle errors
     console.error("Error logging in:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Function to get a user by ID
+exports.getUserById = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // Find the user by their ID
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // If user is found, send it in the response
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user by ID:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -153,10 +176,11 @@ exports.getStudents = async (req, res) => {
     const filteredStudents = students.map((student) => ({
       _id: student._id,
       correo: student.correo,
-      rol: student.rol,
       nombre: student.nombre,
       apellido: student.apellido,
       project: student.project,
+      grades: student.grades,
+      consultancies: student.consultancies,
     }));
 
     res.status(200).json(filteredStudents);
@@ -177,7 +201,6 @@ exports.getTeachers = async (req, res) => {
     const filteredTeachers = teachers.map((teacher) => ({
       _id: teacher._id,
       correo: teacher.correo,
-      rol: teacher.rol,
       nombre: teacher.nombre,
       apellido: teacher.apellido,
       alumnos: teacher.alumnos,
@@ -242,4 +265,57 @@ function generateToken(username, role) {
     expiresIn: "1h", // Token expiration time
   };
   return jwt.sign(payload, secretKey, options);
+}
+
+// Function to validate user credentials and retrieve user's name and role
+async function validateUserAndRole(correo, contraseña) {
+  // Validate user credentials
+  const isValid = await isValidUser(correo, contraseña);
+
+  if (!isValid) {
+    return { isValid: false };
+  }
+
+  // Get user's role and name
+  const role = await getRole(correo);
+  const nombre = await getUserName(correo);
+  const id = await getUserId(correo);
+
+  return { isValid: true, role, nombre, id };
+}
+
+// Function to retrieve user's name based on email
+async function getUserName(correo) {
+  try {
+    // Find the user in the database based on their email
+    const user = await User.findOne({ correo });
+
+    // If user is found, return their name
+    if (user) {
+      return user.nombre; // Assuming 'nombre' is the field containing the user's name
+    } else {
+      return null; // If user is not found, return null
+    }
+  } catch (error) {
+    console.error("Error fetching user's name:", error);
+    throw error;
+  }
+}
+
+// Function to retrieve user's _id based on email
+async function getUserId(correo) {
+  try {
+    // Find the user in the database based on their email
+    const user = await User.findOne({ correo });
+
+    // If user is found, return their _id
+    if (user) {
+      return user._id; // Return the _id property of the user object
+    } else {
+      return null; // If user is not found, return null
+    }
+  } catch (error) {
+    console.error("Error fetching user's _id:", error);
+    throw error;
+  }
 }

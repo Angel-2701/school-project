@@ -56,8 +56,18 @@
               </template>
               <template v-slot:item="{ item }">
                 <tr>
-                  <td v-for="(value, key) in item" :key="key">
-                    {{ value }}
+                  <td>{{ item._id }}</td>
+                  <td>{{ item.nombre }}</td>
+                  <td>{{ item.apellido }}</td>
+                  <td>{{ item.correo }}</td>
+                  <td>
+                    <v-btn
+                      small
+                      color="blue darken-2"
+                      @click="showAssignedStudents(item)"
+                    >
+                      {{ item.alumnos.length }} Students
+                    </v-btn>
                   </td>
                   <td>
                     <v-btn
@@ -85,6 +95,26 @@
           </v-card>
         </v-col>
       </v-main>
+      <!-- Show Assigned Students Dialog -->
+      <v-dialog v-model="showAssignedStudentsDialog" max-width="500">
+        <v-card>
+          <v-card-title>Assigned Students</v-card-title>
+          <v-card-text>
+            <ul>
+              <li v-for="student in assignedStudents" :key="student">
+                {{ student }}
+              </li>
+            </ul>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn
+              color="blue darken-2"
+              @click="showAssignedStudentsDialog = false"
+              >Close</v-btn
+            >
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <!-- Edit Dialog -->
       <v-dialog v-model="editDialog" max-width="500">
@@ -203,7 +233,9 @@ export default {
         correo: '',
         contraseña: ''
         // Add more fields as needed
-      }
+      },
+      showAssignedStudentsDialog: false,
+      assignedStudents: []
     }
   },
   methods: {
@@ -250,10 +282,10 @@ export default {
           this.$router.push('/admin')
           break
         case 1:
-          this.$router.push('/students')
+          this.$router.push('/admin/students')
           break
         case 2:
-          this.$router.push('/teachers')
+          this.$router.push('/admin/teachers')
           break
         default:
           break
@@ -261,6 +293,11 @@ export default {
     },
     logout () {
       // Logic to logout the user
+      // For example, you can clear any user data or tokens stored in localStorage
+      localStorage.removeItem('token')
+
+      // Redirect the user to the login page
+      this.$router.push('/login')
     },
     editUser (teacher) {
       // Assign the teacher data to editedTeacher
@@ -335,6 +372,10 @@ export default {
       } catch (error) {
         console.error('Error deleting teacher:', error)
       }
+    },
+    showAssignedStudents (teacher) {
+      this.assignedStudents = teacher.alumnos // Assuming 'alumnos' is an array of student IDs
+      this.showAssignedStudentsDialog = true
     }
   },
   mounted () {

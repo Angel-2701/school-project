@@ -14,6 +14,24 @@ const userSchema = new mongoose.Schema({
   carrera: String,
   periodo: String,
   project: Number, // Optional field for projects as an array of numbers
+  grades: {
+    grade1: {
+      type: Number,
+      min: 0,
+      max: 10,
+    },
+    grade2: {
+      type: Number,
+      min: 0,
+      max: 10,
+    },
+    grade3: {
+      type: Number,
+      min: 0,
+      max: 10,
+    },
+  },
+  consultancies: Number,
 });
 
 // Method to compare passwords
@@ -30,4 +48,3 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 
 module.exports = mongoose.model("User", userSchema);
 
-module.exports = mongoose.model("User", userSchema);

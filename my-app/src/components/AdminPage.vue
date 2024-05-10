@@ -37,7 +37,7 @@
       <v-main>
         <!-- Main content -->
         <v-col cols="12" style="max-width: 1500px; margin: 0px auto">
-          <v-card class="text-center" style="width: 100%; margin: 0px auto;">
+          <v-card class="text-center" style="width: 100%; margin: 0px auto">
             <!-- Projects Data -->
             <v-data-table
               v-if="projects.length > 0"
@@ -55,7 +55,7 @@
                 </v-toolbar>
               </template>
               <template v-slot:item="{ item }">
-                <tr>
+                <tr @click="handleRowClick(item)" class="clickable-row">
                   <td v-for="(value, key) in item" :key="key">
                     {{ value }}
                   </td>
@@ -65,11 +65,12 @@
                       icon
                       small
                       color="blue darken-2"
-                      @click="editProject(item)"
+                      @click="editProject(item, $event)"
                       style="width: 30px; height: 30px; margin-right: 5px"
                     >
                       <v-icon style="font-size: 18px">mdi-pencil</v-icon>
                     </v-btn>
+
                     <v-btn
                       icon
                       small
@@ -142,7 +143,7 @@ export default {
         { title: 'Students', icon: 'mdi-account-plus-outline' },
         { title: 'Teachers', icon: 'mdi-account-tie' }
       ],
-      userName: 'John Doe',
+      userName: localStorage.getItem('userName'), // Retrieve the user's name from localStorage
       drawer: false,
       editDialog: false,
       editedProjectName: '',
@@ -186,10 +187,10 @@ export default {
           this.$router.push('/admin')
           break
         case 1:
-          this.$router.push('/Students')
+          this.$router.push('/admin/Students')
           break
         case 2:
-          this.$router.push('/Teachers')
+          this.$router.push('/admin/Teachers')
           break
         default:
           break
@@ -203,11 +204,15 @@ export default {
       // Redirect the user to the login page
       this.$router.push('/login')
     },
-    editProject (project) {
+    editProject (project, event) {
+      // Stop the propagation of the click event
+      event.stopPropagation()
+
       this.editedProjectName = project.name
       this.editedProjectId = project._id
       this.editDialog = true
     },
+
     saveEditedProject () {
       // Create an object with the updated project data
       const updatedProject = {
@@ -286,6 +291,11 @@ export default {
 
     cancelEdit () {
       this.editDialog = false
+    },
+    handleRowClick (item) {
+      // Handle row click event here
+      console.log('Row clicked:', item)
+      // You can perform any action you want here, such as navigating to another page or displaying more information about the clicked item.
     }
   },
   mounted () {
@@ -298,5 +308,11 @@ export default {
 /* Adjustments for burger menu icon color */
 .v-btn i {
   color: white;
+}
+
+/* Add shadow to indicate clickable rows */
+.clickable-row:hover {
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>

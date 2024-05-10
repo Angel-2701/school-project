@@ -56,10 +56,12 @@ export default {
         })
 
         if (response.status === 200) {
-          const { token, rol } = response.data
+          const { token, rol, nombre, id } = response.data
 
-          // Store the token in localStorage
+          // Store the token and the user's name in localStorage
           localStorage.setItem('token', token)
+          localStorage.setItem('userName', nombre)
+          localStorage.setItem('id', id)
 
           switch (rol) {
             case 'admin':
@@ -69,7 +71,7 @@ export default {
               this.$router.push('/Student')
               break
             case 'teacher':
-              this.$router.push('/Teacher')
+              this.$router.push('/Teacher/projects')
               break
             default:
               // Redirect to a default route for unknown roles

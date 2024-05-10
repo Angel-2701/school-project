@@ -5,6 +5,8 @@ import StudentPage from '../components/StudentPage.vue'
 import TeacherPage from '../components/TeacherPage.vue'
 import StudentsPage from '../components/StudentsPage.vue'
 import TeachersPage from '../components/TeachersPage.vue'
+import UserDetails from '../components/UserDetails.vue'
+import ProjectTable from '../components/ProjectTable.vue'
 
 const routes = [
   {
@@ -30,22 +32,34 @@ const routes = [
     meta: { requiresAuth: true, role: 'student' }
   },
   {
-    path: '/Teacher',
-    name: 'Teacher',
-    component: TeacherPage,
-    meta: { requiresAuth: true, role: 'teacher' }
-  },
-  {
-    path: '/Students',
+    path: '/admin/Students',
     name: 'Students',
     component: StudentsPage,
     meta: { requiresAuth: true, role: 'admin' }
   },
   {
-    path: '/Teachers',
+    path: '/admin/Teachers',
     name: 'Teachers',
     component: TeachersPage,
     meta: { requiresAuth: true, role: 'admin' }
+  },
+  {
+    path: '/teacher/projects',
+    name: 'TeacherProjects',
+    component: TeacherPage,
+    meta: { requiresAuth: true, role: 'teacher' }
+  },
+  {
+    path: '/user-details/:userId',
+    name: 'UserDetails',
+    component: UserDetails,
+    meta: { requiresAuth: true, role: ['admin', 'teacher'] }
+  },
+  {
+    path: '/teacher/projects/:projectId',
+    name: 'ProjectTable',
+    component: ProjectTable, // Your component for displaying project details
+    props: true
   }
 ]
 
@@ -62,7 +76,7 @@ router.beforeEach((to, from, next) => {
   if (to.path === '/' || (requiresAuth && !token)) {
     // Redirect to login page if accessing root path or if authentication is required but token is not present
     next('/login')
-  } else if (requiresAuth && userRole !== to.meta.role) {
+  } else if (requiresAuth && !to.meta.role.includes(userRole)) {
     // Redirect to corresponding role page if user role does not match the route's required role
     switch (userRole) {
       case 'admin':
