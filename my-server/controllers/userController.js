@@ -79,7 +79,6 @@ exports.register = async (req, res) => {
       asesorExterno,
       periodo,
       fechaAprobacion,
-      alumnos, // Include alumnos field in the destructuring
     } = req.body;
 
     // Check if the user already exists
@@ -112,8 +111,8 @@ exports.register = async (req, res) => {
     };
 
     // Conditionally include alumnos field if the role is teacher and it's present in the request body
-    if (rol === "teacher" && alumnos && alumnos.length > 0) {
-      newUserObject.alumnos = alumnos;
+    if (rol === "teacher" && req.body.alumnos) {
+      newUserObject.alumnos = req.body.alumnos;
     }
 
     const newUser = new User(newUserObject);

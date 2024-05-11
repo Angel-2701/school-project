@@ -74,12 +74,12 @@
                   <td>{{ item.apellidoM }}</td>
                   <td>
                     <v-btn
-                      small
-                      color="blue darken-2"
-                      @click="showAssignedStudents(item)"
-                    >
+        small
+        color="blue darken-2"
+        @click="showAssignedStudents(item)"
+      >
                       {{ item.alumnos.length }} Students
-                    </v-btn>
+      </v-btn>
                   </td>
                   <td>
                     <v-btn

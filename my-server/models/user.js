@@ -41,6 +41,17 @@ const userSchema = new mongoose.Schema({
   fechaAprobacion: String,
 });
 
+// Conditionally include alumnos field only when rol is "teacher"
+userSchema.add({
+  alumnos: {
+    type: [Number], // Assuming alumnos are identified by numbers
+    default: undefined,
+    required: function () {
+      return this.rol === "teacher";
+    },
+  },
+});
+
 // Method to compare passwords
 userSchema.methods.comparePassword = async function (candidatePassword) {
   try {
