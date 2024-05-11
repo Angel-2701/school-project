@@ -48,7 +48,7 @@
           >
             <ProjectCard
               :projectName="project.name"
-              @click="onClick2(project)"
+              @click="onClick(project)"
             />
           </v-col>
         </v-row>
@@ -68,26 +68,12 @@ export default {
   data () {
     return {
       id: localStorage.getItem('id'),
-      editDialog: false,
-      editedProjectName: '',
-      editedProjectId: '',
-      newProject: {
-        name: '',
-        company: '',
-        _id: ''
-      },
       showProjects: true,
       projects: [],
       students: [],
-      users: [],
       sidebarItems: [{ title: 'Projects', icon: 'mdi-folder-outline' }],
-      userName: 'John Doe',
       drawer: false,
-      selectedProject: {},
-      selectedUser: {},
-      gradeOptions: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      enableConsultanciesDialog: false,
-      numberOfConsultancies: 1
+      userName: localStorage.getItem('userName')
     }
   },
   methods: {
@@ -124,73 +110,13 @@ export default {
         console.error('Error fetching data:', error)
       }
     },
-    openGradeDialog (user) {
-      this.selectedUser = user
-      if (!this.selectedUser.grades) {
-        this.selectedUser.grades = { grade1: null, grade2: null, grade3: null }
-      }
-      this.editDialog = true
-    },
-    saveGrades () {
-      axios
-        .put(
-          `http://localhost:3000/users/${this.selectedUser._id}`,
-          this.selectedUser
-        )
-        .then((response) => {
-          console.log('User updated successfully:', response.data)
-          this.editDialog = false
-          this.fetchData()
-        })
-        .catch((error) => {
-          console.error('Error updating user:', error)
-        })
-    },
-    openConsultanciesDialog (student) {
-      this.selectedStudent = student
-      this.enableConsultanciesDialog = true
-    },
-    enableConsultancies () {
-      const numberOfConsultancies = parseInt(
-        this.selectedStudent.consultancies
-      )
-      console.log('Number of Consultancies to Enable:', numberOfConsultancies)
-      this.updateConsultancies(numberOfConsultancies)
-    },
-    updateConsultancies () {
-      axios
-        .put(
-          `http://localhost:3000/users/${this.selectedStudent._id}`,
-          this.selectedStudent
-        )
-        .then((response) => {
-          console.log(
-            'User consultancies updated successfully:',
-            response.data
-          )
-          this.enableConsultanciesDialog = false
-          this.fetchData()
-        })
-        .catch((error) => {
-          console.error('Error updating user consultancies:', error)
-        })
-    },
 
-    onClick2 (project) {
+    onClick (project) {
       // Navigate to the new route with the project ID as a route parameter
       this.$router.push({
         name: 'ProjectTable',
         params: { projectId: project._id }
       })
-    },
-
-    onClick (project) {
-      this.selectedProject = project
-      this.showProjects = false
-      // Filter students based on the selected project ID
-      this.users = this.students.filter(
-        (student) => student.project === project._id
-      )
     },
 
     navigate (index) {
@@ -212,15 +138,6 @@ export default {
     logout () {
       localStorage.removeItem('token')
       this.$router.push('/login')
-    },
-    handleRowClick (item) {
-      // Handle row click event here
-      console.log('Row clicked:', item)
-      // Navigate to a new page and pass the user's ID as route parameters
-      this.$router.push({
-        name: 'UserDetails',
-        params: { userId: item._id }
-      })
     }
   },
   mounted () {

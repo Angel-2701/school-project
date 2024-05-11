@@ -1,54 +1,15 @@
 <template>
   <v-container>
-    <v-card v-if="user">
-      <v-card-title>User Details</v-card-title>
+    <v-card v-if="user" class="user-card">
+      <v-card-title class="user-card-title blue darken-2">User Details</v-card-title>
       <v-card-text>
         <v-container>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-row>
-                <v-col cols="4">
-                  <strong>ID:</strong>
-                </v-col>
-                <v-col cols="8">
-                  {{ user._id }}
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col cols="4">
-                  <strong>Name:</strong>
-                </v-col>
-                <v-col cols="8">
-                  {{ user.nombre }}
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col cols="4">
-                  <strong>Last Name:</strong>
-                </v-col>
-                <v-col cols="8">
-                  {{ user.apellido }}
-                </v-col>
-              </v-row>
+          <v-row v-for="(value, key) in user" :key="key" class="user-detail-row">
+            <v-col cols="4">
+              <strong>{{ key }}:</strong>
             </v-col>
-            <v-col cols="12" md="6">
-              <v-row>
-                <v-col cols="4">
-                  <strong>Email:</strong>
-                </v-col>
-                <v-col cols="8">
-                  {{ user.correo }}
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col cols="4">
-                  <strong>Project:</strong>
-                </v-col>
-                <v-col cols="8">
-                  {{ user.project }}
-                </v-col>
-              </v-row>
-              <!-- Add more fields as needed -->
+            <v-col cols="8">
+              {{ value }}
             </v-col>
           </v-row>
         </v-container>
@@ -87,5 +48,44 @@ export default {
 </script>
 
 <style scoped>
-/* Add any necessary styling */
+.user-card {
+  max-width: 800px;
+  margin: auto;
+  background-color: #f3f5f7;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.user-card-title {
+  color: #fff;
+  font-size: 24px;
+  padding: 20px;
+  background-color: #1976d2; /* Changed background color to blue darken-2 */
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.user-detail-row {
+  border-bottom: 1px solid #ddd;
+  padding: 10px 20px;
+}
+
+.user-detail-row:nth-last-child(1) {
+  border-bottom: none;
+}
+
+.user-detail-row strong {
+  font-weight: bold;
+  color: #666;
+}
+
+.user-detail-row v-col {
+  padding: 0;
+}
+
+@media (max-width: 600px) {
+  .user-card-title {
+    font-size: 20px;
+  }
+}
 </style>

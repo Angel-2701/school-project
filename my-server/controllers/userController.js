@@ -45,8 +45,8 @@ exports.getUserById = async (req, res) => {
   try {
     const userId = req.params.id;
 
-    // Find the user by their ID
-    const user = await User.findById(userId);
+    // Find the user by their ID, excluding the 'contraseña' property
+    const user = await User.findById(userId).select("-contraseña");
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -72,20 +72,28 @@ exports.register = async (req, res) => {
       username,
       _id,
       project,
-      alumnos,
+      carrera,
+      numeroTelefonico,
+      apellidoM,
+      empresa,
+      asesorExterno,
+      periodo,
+      fechaAprobacion,
+      alumnos, // Include alumnos field in the destructuring
     } = req.body;
+
     // Check if the user already exists
     const existingUser = await User.findOne({ correo });
 
     if (existingUser) {
-      return res.status(400).json({ error: "email already exists" });
+      return res.status(400).json({ error: "Email already exists" });
     }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(contraseña, 10); // 10 is the salt rounds
 
-    // Create a new user with hashed password
-    const newUser = new User({
+    // Create a new user with the updated object
+    const newUserObject = {
       correo,
       contraseña: hashedPassword,
       rol,
@@ -94,10 +102,24 @@ exports.register = async (req, res) => {
       username,
       _id,
       project,
-      alumnos,
-    });
+      carrera,
+      numeroTelefonico,
+      apellidoM,
+      empresa,
+      asesorExterno,
+      periodo,
+      fechaAprobacion,
+    };
+
+    // Conditionally include alumnos field if the role is teacher and it's present in the request body
+    if (rol === "teacher" && alumnos && alumnos.length > 0) {
+      newUserObject.alumnos = alumnos;
+    }
+
+    const newUser = new User(newUserObject);
+
     await newUser.save();
-    res.status(201).json({ message: "user created successfully" });
+    res.status(201).json({ message: "User created successfully" });
   } catch (error) {
     console.error("Error creating user:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -178,9 +200,15 @@ exports.getStudents = async (req, res) => {
       correo: student.correo,
       nombre: student.nombre,
       apellido: student.apellido,
+      apellidoM: student.apellidoM,
       project: student.project,
       grades: student.grades,
       consultancies: student.consultancies,
+      carrera: student.carrera,
+      numeroTelefonico: student.numeroTelefonico,
+      asesorExterno: student.asesorExterno,
+      empresa: student.empresa,
+      periodo: student.periodo,
     }));
 
     res.status(200).json(filteredStudents);
@@ -203,7 +231,9 @@ exports.getTeachers = async (req, res) => {
       correo: teacher.correo,
       nombre: teacher.nombre,
       apellido: teacher.apellido,
+      apellidoM: teacher.apellidoM,
       alumnos: teacher.alumnos,
+      numeroTelefonico: teacher.numeroTelefonico,
     }));
 
     res.status(200).json(filteredTeachers);

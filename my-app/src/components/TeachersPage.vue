@@ -54,12 +54,24 @@
                   </v-btn>
                 </v-toolbar>
               </template>
+              <template v-slot:headers>
+                <tr>
+                  <th>{{ "ID" }}</th>
+                  <th>{{ "Correo" }}</th>
+                  <th>{{ "Nombre" }}</th>
+                  <th>{{ "Apellido" }}</th>
+                  <th>{{ "Apellido Materno" }}</th>
+                  <th>{{ "Alumnos" }}</th>
+                  <!-- Exclude numeroTelefonico from the headers -->
+                </tr>
+              </template>
               <template v-slot:item="{ item }">
                 <tr>
                   <td>{{ item._id }}</td>
                   <td>{{ item.correo }}</td>
-                  <td>{{ item.apellido }}</td>
                   <td>{{ item.nombre }}</td>
+                  <td>{{ item.apellido }}</td>
+                  <td>{{ item.apellidoM }}</td>
                   <td>
                     <v-btn
                       small
@@ -96,19 +108,37 @@
         </v-col>
       </v-main>
       <!-- Show Assigned Students Dialog -->
+      <!-- Show Assigned Students Dialog -->
       <v-dialog v-model="showAssignedStudentsDialog" max-width="500">
         <v-card>
-          <v-card-title>Assigned Students</v-card-title>
+          <v-card-title class="headline">Assigned Students</v-card-title>
           <v-card-text>
-            <ul>
-              <li v-for="student in assignedStudents" :key="student">
-                {{ student }}
-              </li>
-            </ul>
+            <v-list>
+              <v-list-item
+                v-for="student in assignedStudents"
+                :key="student.id"
+                class="mb-4"
+              >
+                <v-list-item-icon>
+                  <v-icon>mdi-account</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title class="font-weight-bold">
+                    <span>ID:</span> {{ student._id }}<br />
+                    <span>Name:</span> {{ student.nombre }}<br />
+                    <span>Project:</span> {{ student.projectName }}
+
+                    <!-- Modified to call getProjectName method -->
+                  </v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
           </v-card-text>
           <v-card-actions>
             <v-btn
               color="blue darken-2"
+              dark
+              large
               @click="showAssignedStudentsDialog = false"
               >Close</v-btn
             >
@@ -130,13 +160,17 @@
               label="Last Name"
             ></v-text-field>
             <v-text-field
+              v-model="editedTeacher.apellidoM"
+              label="Apellido Materno"
+            ></v-text-field>
+            <v-text-field
               v-model="editedTeacher.correo"
               label="Email"
             ></v-text-field>
             <v-text-field
-              v-model="editedTeacher.contraseña"
-              label="Password"
-              type="password"
+              v-model="editedTeacher.numeroTelefonico"
+              label="Telefono"
+              type="number"
             ></v-text-field>
             <!-- Add v-select to select students -->
             <v-select
@@ -168,6 +202,15 @@
             <v-text-field
               v-model="newTeacher.apellido"
               label="Last Name"
+            ></v-text-field>
+            <v-text-field
+              v-model="newTeacher.apellidoM"
+              label="Apellido Materno"
+            ></v-text-field>
+            <v-text-field
+              v-model="newTeacher.numeroTelefonico"
+              label="Telefono"
+              type="number"
             ></v-text-field>
             <v-text-field
               v-model="newTeacher.correo"
@@ -206,6 +249,7 @@ import axios from 'axios'
 export default {
   data () {
     return {
+      studentProjectNames: {},
       students: [],
       selectedOptions: [],
       teachers: [],
@@ -223,7 +267,8 @@ export default {
         apellido: '',
         correo: '',
         contraseña: '',
-        alumnos: []
+        alumnos: [],
+        apellidoM: ''
         // Add more fields as needed
       },
       createDialog: false,
@@ -231,7 +276,8 @@ export default {
         nombre: '',
         apellido: '',
         correo: '',
-        contraseña: ''
+        contraseña: '',
+        apellidoM: ''
         // Add more fields as needed
       },
       showAssignedStudentsDialog: false,
@@ -256,7 +302,6 @@ export default {
 
     async fetchStudents () {
       try {
-        // Fetch all students
         const studentsResponse = await axios.get(
           'http://localhost:3000/students'
         )
@@ -269,11 +314,43 @@ export default {
           )
         })
 
+        const assignedStudents = allStudents.filter((student) => {
+          return this.teachers.some((teacher) =>
+            teacher.alumnos.includes(student._id)
+          )
+        })
+
+        // Include the teacher's ID in the assignedStudents array
+        const updatedAssignedStudents = assignedStudents.map((student) => ({
+          ...student,
+          teacherId: student.teacherId // Ensure each student object has a teacherId property
+        }))
+
+        // Fetch project names for each student's project
+        const projectNamesPromises = updatedAssignedStudents.map(
+          async (student) => {
+            const projectName = await this.getProjectName(student.project)
+            return { ...student, projectName }
+          }
+        )
+
+        // Wait for all project names to be fetched
+        this.assignedStudents = await Promise.all(projectNamesPromises)
+
         // Extract just the names from the unassigned students data
         this.students = unassignedStudents.map((student) => student._id)
       } catch (error) {
         console.error('Error fetching students:', error)
       }
+    },
+
+    async showAssignedStudents (teacher) {
+      // Filter assignedStudents to include only those assigned to the current teacher
+      await this.fetchStudents()
+      this.assignedStudents = this.assignedStudents.filter((student) =>
+        teacher.alumnos.includes(student._id)
+      )
+      this.showAssignedStudentsDialog = true
     },
 
     async navigate (index) {
@@ -299,8 +376,9 @@ export default {
       // Redirect the user to the login page
       this.$router.push('/login')
     },
-    editUser (teacher) {
+    async editUser (teacher) {
       // Assign the teacher data to editedTeacher
+      await this.fetchStudents()
       this.editedTeacher = { ...teacher }
 
       // If editedTeacher has alumnos property, add its students to the students array
@@ -373,9 +451,22 @@ export default {
         console.error('Error deleting teacher:', error)
       }
     },
-    showAssignedStudents (teacher) {
-      this.assignedStudents = teacher.alumnos // Assuming 'alumnos' is an array of student IDs
-      this.showAssignedStudentsDialog = true
+
+    async getProjectName (projectId) {
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/projects/${projectId}`
+        )
+        const data = response.data // Assuming the project name is stored in the 'name' field
+        return data.name
+      } catch (error) {
+        console.error('Error fetching project name:', error)
+        return 'Unknown' // Return a default value if an error occurs
+      }
+    },
+    async renderProjectName (projectId) {
+      const projectName = await this.getProjectName(projectId)
+      this.studentProjectNames[projectId] = projectName // Store the project name
     }
   },
   mounted () {

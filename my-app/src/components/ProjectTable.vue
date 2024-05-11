@@ -14,6 +14,23 @@
         <v-icon>mdi-logout</v-icon>
       </v-btn>
     </v-app-bar>
+    <!-- Sidebar -->
+    <v-navigation-drawer app v-model="drawer" color="blue darken-2" dark>
+        <v-list dense>
+          <v-list-item
+            v-for="(item, index) in sidebarItems"
+            :key="index"
+            @click="navigate(index)"
+          >
+            <v-list-item-action>
+              <v-icon>{{ item.icon }}</v-icon>
+            </v-list-item-action>
+            <v-list-item-content>
+              <v-list-item-title>{{ item.title }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </v-navigation-drawer>
     <v-main>
       <!-- Main content -->
       <v-col cols="12" style="max-width: 1500px; margin: 0px auto">
@@ -28,11 +45,25 @@
                 <!-- Removed the button for creating a new project -->
               </v-toolbar>
             </template>
+            <template v-slot:headers>
+              <tr>
+                <th>{{ "ID" }}</th>
+                <th>{{ "Nombre" }}</th>
+                <th>{{ "Apellido" }}</th>
+                <th>{{ "Apellido Materno" }}</th>
+                <th>{{ "Carrera" }}</th>
+                <th>{{ "Proyecto" }}</th>
+                <!-- Exclude numeroTelefonico from the headers -->
+              </tr>
+            </template>
             <template v-slot:item="{ item }">
               <tr @click="handleRowClick(item)" class="clickable-row">
-                <td v-for="(value, key) in item" :key="key">
-                  {{ value }}
-                </td>
+                <td>{{ item._id }}</td>
+                <td>{{ item.nombre }}</td>
+                <td>{{ item.apellido }}</td>
+                <td>{{ item.apellidoM }}</td>
+                <td>{{ item.carrera }}</td>
+                <td>{{ item.project }}</td>
                 <td>
                   <!-- Use small prop to make the buttons smaller -->
                   <v-tooltip bottom>
@@ -149,66 +180,49 @@ export default {
   data () {
     return {
       id: localStorage.getItem('id'),
+      userName: localStorage.getItem('userName'),
       editDialog: false,
-      editedProjectName: '',
-      editedProjectId: '',
-      newProject: {
-        name: '',
-        company: '',
-        _id: ''
-      },
-      showProjects: true,
       projects: [],
       students: [],
       users: [],
-      sidebarItems: [{ title: 'Projects', icon: 'mdi-folder-outline' }],
-      userName: 'John Doe',
       drawer: false,
       selectedProject: null,
       selectedUser: {},
       gradeOptions: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       enableConsultanciesDialog: false,
-      numberOfConsultancies: 1
+      sidebarItems: [{ title: 'Projects', icon: 'mdi-folder-outline' }]
     }
   },
   beforeRouteEnter (to, from, next) {
     const projectId = parseFloat(to.params.projectId)
     axios
       .get(`http://localhost:3000/projects/${projectId}`)
-      .then((response) => {
-        next((vm) => {
-          vm.selectedProject = response.data
-        })
-      })
+      .then((response) => next((vm) => (vm.selectedProject = response.data)))
       .catch((error) => {
         console.error('Error fetching user details:', error)
         next(false) // Prevent component from rendering
       })
   },
+
   methods: {
     async fetchData () {
       try {
-        const teacherResponse = await axios.get(
-          `http://localhost:3000/users/${this.id}`
-        )
-        const teacher = teacherResponse.data
+        const [teacherResponse, studentsResponse, projectsResponse] =
+          await Promise.all([
+            axios.get(`http://localhost:3000/users/${this.id}`),
+            axios.get('http://localhost:3000/students'),
+            axios.get('http://localhost:3000/projects')
+          ])
 
-        const studentsResponse = await axios.get(
-          'http://localhost:3000/students'
-        )
+        const teacher = teacherResponse.data
         const allStudents = studentsResponse.data
 
         const teacherStudents = allStudents.filter((student) =>
           teacher.alumnos.includes(student._id)
         )
-
         const projectIds = teacherStudents.map((student) => student.project)
 
-        const projectsResponse = await axios.get(
-          'http://localhost:3000/projects'
-        )
         const projects = projectsResponse.data
-
         const filteredProjects = projects.filter((project) =>
           projectIds.includes(project._id)
         )
@@ -222,6 +236,7 @@ export default {
         console.error('Error fetching data:', error)
       }
     },
+
     openGradeDialog (user, event) {
       event.stopPropagation()
       this.selectedUser = user
@@ -230,21 +245,21 @@ export default {
       }
       this.editDialog = true
     },
-    saveGrades () {
-      axios
-        .put(
+
+    async saveGrades () {
+      try {
+        const response = await axios.put(
           `http://localhost:3000/users/${this.selectedUser._id}`,
           this.selectedUser
         )
-        .then((response) => {
-          console.log('User updated successfully:', response.data)
-          this.editDialog = false
-          this.fetchData()
-        })
-        .catch((error) => {
-          console.error('Error updating user:', error)
-        })
+        console.log('User updated successfully:', response.data)
+        this.editDialog = false
+        this.fetchData()
+      } catch (error) {
+        console.error('Error updating user:', error)
+      }
     },
+
     openConsultanciesDialog (student, event) {
       event.stopPropagation()
       this.selectedStudent = student
@@ -257,23 +272,18 @@ export default {
       console.log('Number of Consultancies to Enable:', numberOfConsultancies)
       this.updateConsultancies(numberOfConsultancies)
     },
-    updateConsultancies () {
-      axios
-        .put(
+    async updateConsultancies () {
+      try {
+        const response = await axios.put(
           `http://localhost:3000/users/${this.selectedStudent._id}`,
           this.selectedStudent
         )
-        .then((response) => {
-          console.log(
-            'User consultancies updated successfully:',
-            response.data
-          )
-          this.enableConsultanciesDialog = false
-          this.fetchData()
-        })
-        .catch((error) => {
-          console.error('Error updating user consultancies:', error)
-        })
+        console.log('User consultancies updated successfully:', response.data)
+        this.enableConsultanciesDialog = false
+        this.fetchData()
+      } catch (error) {
+        console.error('Error updating user consultancies:', error)
+      }
     },
 
     navigate (index) {
@@ -308,20 +318,11 @@ export default {
   },
   mounted () {
     this.fetchData()
-    // Filter students based on the selected project ID
-    this.users = this.students.filter(
-      (student) => student.project === this.selectedProject._id
-    )
   }
 }
 </script>
 
 <style scoped>
-/* Adjustments for burger menu icon color */
-.v-btn i {
-  color: white;
-}
-
 .clickable-row:hover {
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

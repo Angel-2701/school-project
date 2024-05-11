@@ -97,6 +97,10 @@
               v-model="editedProjectName"
               label="Project Name"
             ></v-text-field>
+            <v-text-field
+              v-model="editedProjectCompany"
+              label="Company"
+            ></v-text-field>
           </v-card-text>
           <v-card-actions>
             <v-btn color="blue darken-2" @click="saveEditedProject">Save</v-btn>
@@ -148,6 +152,7 @@ export default {
       editDialog: false,
       editedProjectName: '',
       editedProjectId: '',
+      editedProjectCompany: '',
       createDialog: false,
       newProject: {
         name: '',
@@ -210,13 +215,15 @@ export default {
 
       this.editedProjectName = project.name
       this.editedProjectId = project._id
+      this.editedProjectCompany = project.company
       this.editDialog = true
     },
 
     saveEditedProject () {
       // Create an object with the updated project data
       const updatedProject = {
-        name: this.editedProjectName // Assuming the only editable field is the project name
+        name: this.editedProjectName, // Assuming the only editable field is the project name
+        company: this.editedProjectCompany
       }
 
       // Make an HTTP PUT request to update the project

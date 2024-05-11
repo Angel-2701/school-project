@@ -40,8 +40,8 @@
           <v-card class="text-center" style="width: 100%; margin: 0px auto">
             <!-- Students Data -->
             <v-data-table
-              v-if="students.length > 0"
-              :items="students"
+              v-if="studentsTable.length > 0"
+              :items="studentsTable"
               align="center"
             >
               <template v-slot:top>
@@ -57,7 +57,13 @@
               <template v-slot:item="{ item }">
                 <tr @click="handleRowClick(item)" class="clickable-row">
                   <td v-for="(value, key) in item" :key="key">
-                    {{ value }}
+                    <!-- Render project name instead of ID -->
+                    <template v-if="key === 'project'">
+                      {{ getProjectName(item[key]) }}
+                    </template>
+                    <template v-else>
+                      {{ value }}
+                    </template>
                   </td>
                   <td>
                     <v-btn
@@ -101,14 +107,49 @@
               label="Last Name"
             ></v-text-field>
             <v-text-field
+              v-model="editedStudent.apellidoM"
+              label="Apellido Materno"
+            ></v-text-field>
+            <v-text-field
               v-model="editedStudent.correo"
               label="Email"
             ></v-text-field>
             <v-select
               v-model="editedStudent.project"
-              :items="projects"
+              :items="projects.map((project) => project.name)"
               label="Select Project"
             ></v-select>
+
+            <v-text-field
+              v-model="editedStudent.carrera"
+              label="Carrera"
+            ></v-text-field>
+            <v-text-field
+              v-model="editedStudent.numeroTelefonico"
+              label="Phone Number"
+              type="number"
+            ></v-text-field>
+            <v-text-field
+              v-model="editedStudent.empresa"
+              label="Empresa"
+            ></v-text-field>
+            <v-text-field
+              v-model="editedStudent.periodo"
+              label="Periodo"
+            ></v-text-field>
+            <v-text-field
+              v-model="editedStudent.asesorExterno.nombre"
+              label="Nombre Asesor externo"
+            ></v-text-field>
+            <v-text-field
+              v-model="editedStudent.asesorExterno.correo"
+              label="Correo Asesor externo"
+            ></v-text-field>
+            <v-text-field
+              v-model="editedStudent.asesorExterno.telefono"
+              label="External Advisor Number"
+              type="number"
+            ></v-text-field>
             <!-- Add more fields as needed -->
           </v-card-text>
           <v-card-actions>
@@ -134,6 +175,10 @@
               label="Last Name"
             ></v-text-field>
             <v-text-field
+              v-model="newStudent.apellidoM"
+              label="Apellido Materno"
+            ></v-text-field>
+            <v-text-field
               v-model="newStudent.correo"
               label="Email"
             ></v-text-field>
@@ -145,9 +190,39 @@
             <!-- Add dropdown menu for projects -->
             <v-select
               v-model="newStudent.project"
-              :items="projects"
+              :items="projects.map((project) => project.name)"
               label="Select Project"
             ></v-select>
+            <v-text-field
+              v-model="newStudent.carrera"
+              label="Carrera"
+            ></v-text-field>
+            <v-text-field
+              v-model="newStudent.numeroTelefonico"
+              label="Phone Number"
+              type="number"
+            ></v-text-field>
+            <v-text-field
+              v-model="newStudent.empresa"
+              label="Empresa"
+            ></v-text-field>
+            <v-text-field
+              v-model="newStudent.periodo"
+              label="Periodo"
+            ></v-text-field>
+            <v-text-field
+              v-model="newStudent.asesorExterno.nombre"
+              label="Nombre Asesor externo"
+            ></v-text-field>
+            <v-text-field
+              v-model="newStudent.asesorExterno.correo"
+              label="Correo Asesor externo"
+            ></v-text-field>
+            <v-text-field
+              v-model="newStudent.asesorExterno.telefono"
+              label="External Advisor Number"
+              type="number"
+            ></v-text-field>
             <!-- Add more fields as needed -->
           </v-card-text>
           <v-card-actions>
@@ -166,6 +241,7 @@ import axios from 'axios'
 export default {
   data () {
     return {
+      studentsTable: [],
       students: [],
       projects: [],
       projectMenu: false, // Control for project dropdown menu
@@ -181,16 +257,38 @@ export default {
         _id: '',
         nombre: '',
         apellido: '',
+        apellidoM: '',
         correo: '',
-        project: ''
+        project: '',
+        carrera: '',
+        numeroTelefonico: '',
+        empresa: '',
+        periodo: '',
+        asesorExterno: {
+          nombre: '',
+          apellido: '',
+          correo: ''
+        }
         // Add more fields as needed
       },
       createDialog: false,
       newStudent: {
+        rol: 'student',
         nombre: '',
         apellido: '',
+        apellidoM: '',
         correo: '',
-        project: ''
+        project: '',
+        contraseña: '',
+        carrera: '',
+        numeroTelefonico: '',
+        empresa: '',
+        periodo: '',
+        asesorExterno: {
+          nombre: '',
+          apellido: '',
+          correo: ''
+        }
         // Add more fields as needed
       }
     }
@@ -200,6 +298,14 @@ export default {
       try {
         const response = await axios.get('http://localhost:3000/students')
         this.students = response.data
+        this.studentsTable = response.data.map((student) => ({
+          _id: student._id,
+          nombre: student.nombre,
+          apellido: student.apellido,
+          apellidoM: student.apellidoM,
+          carrera: student.carrera,
+          project: student.project
+        }))
       } catch (error) {
         console.error('Error fetching students:', error)
       }
@@ -207,12 +313,16 @@ export default {
     async fetchProjects () {
       try {
         const response = await axios.get('http://localhost:3000/projects')
-        // Extract just the names from the projects data
-        this.projects = response.data.map((project) => project._id)
+        // Extract IDs and names from the projects data
+        this.projects = response.data.map((project) => ({
+          id: project._id,
+          name: project.name
+        }))
       } catch (error) {
         console.error('Error fetching projects:', error)
       }
     },
+
     async navigate (index) {
       switch (index) {
         case 0:
@@ -238,9 +348,17 @@ export default {
     },
     editUser (student, event) {
       event.stopPropagation() // Stop event propagation
-      this.editedStudent = { ...student } // Copy student data to editedStudent
-      this.editDialog = true
+      // Find the student with the matching _id
+      const foundStudent = this.students.find((s) => s._id === student._id)
+      if (foundStudent) {
+        // If the student is found, copy its data to editedStudent
+        this.editedStudent = { ...foundStudent }
+        this.editDialog = true
+      } else {
+        console.error(`Student with ID ${student._id} not found.`)
+      }
     },
+
     async saveEditedStudent () {
       try {
         const response = await axios.put(
@@ -264,6 +382,15 @@ export default {
     },
     async saveNewStudent () {
       try {
+        // Find the selected project object based on its name
+        const selectedProject = this.projects.find(
+          (project) => project.name === this.newStudent.project
+        )
+        if (selectedProject) {
+          // Save the project ID to the new student data
+          this.newStudent.project = selectedProject.id
+        }
+
         const response = await axios.post(
           'http://localhost:3000/register',
           this.newStudent
@@ -279,6 +406,7 @@ export default {
       }
       this.createDialog = false
     },
+
     cancelCreate () {
       this.createDialog = false
     },
@@ -307,6 +435,10 @@ export default {
         name: 'UserDetails',
         params: { userId: item._id }
       })
+    },
+    getProjectName (projectId) {
+      const project = this.projects.find((project) => project.id === projectId)
+      return project ? project.name : ''
     }
   },
   mounted () {
