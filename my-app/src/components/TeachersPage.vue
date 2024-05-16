@@ -38,11 +38,22 @@
         <!-- Main content -->
         <v-col cols="12" style="max-width: 1500px; margin: 0px auto">
           <v-card class="text-center" style="width: 100%; margin: 0px auto">
+            <template v-slot:text>
+              <v-text-field
+                v-model="search"
+                label="Search"
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                hide-details
+                single-line
+              ></v-text-field>
+            </template>
             <!-- Teachers Data -->
             <v-data-table
               v-if="teachers.length > 0"
               :items="teachers"
               align="center"
+              :search="search"
             >
               <template v-slot:top>
                 <v-toolbar flat color="blue darken-2">
@@ -66,7 +77,7 @@
                 </tr>
               </template>
               <template v-slot:item="{ item }">
-                <tr>
+                <tr @click="handleRowClick(item)" class="clickable-row">
                   <td>{{ item._id }}</td>
                   <td>{{ item.correo }}</td>
                   <td>{{ item.nombre }}</td>
@@ -74,19 +85,19 @@
                   <td>{{ item.apellidoM }}</td>
                   <td>
                     <v-btn
-        small
-        color="blue darken-2"
-        @click="showAssignedStudents(item)"
-      >
+                      small
+                      color="blue darken-2"
+                      @click="showAssignedStudents(item, $event)"
+                    >
                       {{ item.alumnos.length }} Students
-      </v-btn>
+                    </v-btn>
                   </td>
                   <td>
                     <v-btn
                       icon
                       small
                       color="blue darken-2"
-                      @click="editUser(item)"
+                      @click="editUser(item, $event)"
                       style="width: 30px; height: 30px; margin-right: 5px"
                     >
                       <v-icon style="font-size: 18px">mdi-pencil</v-icon>
@@ -95,7 +106,7 @@
                       icon
                       small
                       color="red darken-2"
-                      @click="deleteTeacher(item._id)"
+                      @click="deleteTeacher(item._id, $event)"
                       style="width: 30px; height: 30px; margin-right: 5px"
                     >
                       <v-icon style="font-size: 18px">mdi-delete</v-icon>
@@ -147,94 +158,135 @@
       </v-dialog>
 
       <!-- Edit Dialog -->
-      <v-dialog v-model="editDialog" max-width="500">
+      <v-dialog v-model="editDialog" max-width="500" ref="editDialogForm">
         <v-card>
           <v-card-title>Edit Teacher</v-card-title>
           <v-card-text>
             <v-text-field
-              v-model="editedTeacher.nombre"
+              v-model="teacher.nombre"
               label="Name"
+              required
+              :rules="[(v) => !!v || 'Name is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedTeacher.apellido"
+              v-model="teacher.apellido"
               label="Last Name"
+              required
+              :rules="[(v) => !!v || 'Apellido Paterno is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedTeacher.apellidoM"
+              v-model="teacher.apellidoM"
               label="Apellido Materno"
+              required
+              :rules="[(v) => !!v || 'Apellido Materno is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedTeacher.correo"
-              label="Email"
-            ></v-text-field>
-            <v-text-field
-              v-model="editedTeacher.numeroTelefonico"
+              v-model="teacher.numeroTelefonico"
               label="Telefono"
               type="number"
+              required
+              :rules="[(v) => !!v || 'Phone Number is required']"
             ></v-text-field>
             <!-- Add v-select to select students -->
             <v-select
-              v-model="editedTeacher.alumnos"
+              v-model="teacher.alumnos"
               :items="students"
               label="Assign students (max 5)"
               multiple
               chips
+              required
+              :rules="[(v) => !!v || 'Alumnos is required']"
+              @update:modelValue="limitSelection(false)"
             ></v-select>
             <!-- Add more fields as needed -->
           </v-card-text>
           <v-card-actions>
-            <v-btn color="blue darken-2" @click="saveEditedTeacher">Save</v-btn>
+            <v-btn
+              color="blue darken-2"
+              @click="saveEditedTeacher"
+              :disabled="!isEditFormValid"
+              >Save</v-btn
+            >
             <v-btn @click="cancelEdit">Cancel</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
 
       <!-- Create Dialog -->
-      <v-dialog v-model="createDialog" max-width="500">
+      <v-dialog v-model="createDialog" max-width="500" ref="createDialogForm">
         <v-card>
           <v-card-title>Create New Teacher</v-card-title>
           <v-card-text>
-            <v-text-field v-model="newTeacher._id" label="ID"></v-text-field>
             <v-text-field
-              v-model="newTeacher.nombre"
+              v-model="teacher._id"
+              label="ID"
+              required
+              :rules="[
+                (v) => {
+                  console.log('ID value:', v);
+                  return !!v || 'ID is required';
+                },
+                (v) => {
+                  const isValid = /^[0-9]+$/.test(v);
+                  console.log('Is ID valid?', isValid);
+                  return isValid || 'ID must contain only numbers';
+                },
+              ]"
+            ></v-text-field>
+            <v-text-field
+              v-model="teacher.nombre"
               label="Name"
+              required
+              :rules="[(v) => !!v || 'Name is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newTeacher.apellido"
+              v-model="teacher.apellido"
               label="Last Name"
+              required
+              :rules="[(v) => !!v || 'Apellido Paterno is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newTeacher.apellidoM"
+              v-model="teacher.apellidoM"
               label="Apellido Materno"
+              required
+              :rules="[(v) => !!v || 'Apellido Materno is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newTeacher.numeroTelefonico"
+              v-model="teacher.numeroTelefonico"
               label="Telefono"
               type="number"
+              required
+              :rules="[(v) => !!v || 'Phone Number is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newTeacher.correo"
+              v-model="teacher.correo"
               label="Email"
+              required
+              :rules="[(v) => !!v || 'Email is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newTeacher.contraseña"
+              v-model="teacher.contraseña"
               label="Password"
               type="password"
+              required
+              :rules="[(v) => !!v || 'Password is required']"
             ></v-text-field>
             <div>
               <v-select
-                v-model="newTeacher.alumnos"
+                v-model="teacher.alumnos"
                 :items="students"
                 label="Assign students (max 5)"
                 multiple
                 chips
-                @update:modelValue="limitSelection"
+                required
+                :rules="[(v) => !!v || 'Alumnos is required']"
+                @update:modelValue="limitSelection(true)"
               ></v-select>
             </div>
             <!-- Add more fields as needed -->
           </v-card-text>
           <v-card-actions>
-            <v-btn color="blue darken-2" @click="saveNewTeacher">Save</v-btn>
+            <v-btn color="blue darken-2" @click="saveNewTeacher" :disabled="!isCreateFormValid">Save</v-btn>
             <v-btn @click="cancelCreate">Cancel</v-btn>
           </v-card-actions>
         </v-card>
@@ -261,34 +313,66 @@ export default {
       userName: 'John Doe',
       drawer: false,
       editDialog: false,
-      editedTeacher: {
+      teacher: {
         _id: '',
         nombre: '',
         apellido: '',
         correo: '',
         contraseña: '',
         alumnos: [],
-        apellidoM: ''
+        apellidoM: '',
+        numeroTelefonico: ''
         // Add more fields as needed
       },
       createDialog: false,
-      newTeacher: {
-        nombre: '',
-        apellido: '',
-        correo: '',
-        contraseña: '',
-        apellidoM: ''
-        // Add more fields as needed
-      },
       showAssignedStudentsDialog: false,
-      assignedStudents: []
+      assignedStudents: [],
+      search: ''
+    }
+  },
+  computed: {
+    isCreateFormValid () {
+      // Check if the form reference exists
+      if (!this.$refs.editDialogForm) {
+        return false
+      }
+
+      // Manually validate each field
+      return (
+        this.teacher._id &&
+        this.teacher.contraseña &&
+        this.teacher.nombre &&
+        this.teacher.apellido &&
+        this.teacher.apellidoM &&
+        this.teacher.numeroTelefonico &&
+        this.teacher.correo &&
+        this.teacher.alumnos
+      )
+    },
+    isEditFormValid () {
+      // Check if the form reference exists
+      if (!this.$refs.editDialogForm) {
+        return false
+      }
+
+      // Manually validate each field
+      return (
+        this.teacher.nombre &&
+        this.teacher.apellido &&
+        this.teacher.apellidoM &&
+        this.teacher.numeroTelefonico &&
+        this.teacher.alumnos
+      )
     }
   },
   methods: {
-    limitSelection () {
-      if (this.selectedOptions.length > 5) {
+    limitSelection (isNewUser) {
+      if (isNewUser && this.teacher.alumnos.length > 5) {
         alert('You can only select a maximum of 5 options.')
-        this.selectedOptions = this.selectedOptions.slice(0, 5)
+        this.teacher.alumnos = this.teacher.alumnos.slice(0, 5)
+      } else if (!isNewUser && this.teacher.alumnos.length > 5) {
+        alert('You can only select a maximum of 5 options.')
+        this.teacher.alumnos = this.teacher.alumnos.slice(0, 5)
       }
     },
     async fetchData () {
@@ -344,7 +428,8 @@ export default {
       }
     },
 
-    async showAssignedStudents (teacher) {
+    async showAssignedStudents (teacher, event) {
+      event.stopPropagation()
       // Filter assignedStudents to include only those assigned to the current teacher
       await this.fetchStudents()
       this.assignedStudents = this.assignedStudents.filter((student) =>
@@ -376,17 +461,15 @@ export default {
       // Redirect the user to the login page
       this.$router.push('/login')
     },
-    async editUser (teacher) {
+    async editUser (teacher, event) {
+      event.stopPropagation()
       // Assign the teacher data to editedTeacher
       await this.fetchStudents()
-      this.editedTeacher = { ...teacher }
+      this.teacher = { ...teacher }
 
       // If editedTeacher has alumnos property, add its students to the students array
-      if (
-        this.editedTeacher.alumnos &&
-        Array.isArray(this.editedTeacher.alumnos)
-      ) {
-        this.students = [...this.students, ...this.editedTeacher.alumnos]
+      if (this.teacher.alumnos && Array.isArray(this.teacher.alumnos)) {
+        this.students = [...this.students, ...this.teacher.alumnos]
       }
 
       // Open the edit dialog
@@ -397,8 +480,8 @@ export default {
       try {
         // Send the updated teacher data to the server
         const response = await axios.put(
-          `http://localhost:3000/users/${this.editedTeacher._id}`,
-          this.editedTeacher
+          `http://localhost:3000/users/${this.teacher._id}`,
+          this.teacher
         )
 
         console.log('Teacher updated successfully:', response.data)
@@ -419,11 +502,11 @@ export default {
     async saveNewTeacher () {
       try {
         // Add 'rol' field with value 'teacher'
-        this.newTeacher.rol = 'teacher'
+        this.teacher.rol = 'teacher'
 
         const response = await axios.post(
           'http://localhost:3000/register',
-          this.newTeacher
+          this.teacher
         )
         if (response.status === 201) {
           console.log('Teacher created successfully:', response.data)
@@ -440,7 +523,8 @@ export default {
     cancelCreate () {
       this.createDialog = false
     },
-    async deleteTeacher (teacherId) {
+    async deleteTeacher (teacherId, event) {
+      event.stopPropagation()
       try {
         const response = await axios.delete(
           `http://localhost:3000/users/${teacherId}`
@@ -467,6 +551,16 @@ export default {
     async renderProjectName (projectId) {
       const projectName = await this.getProjectName(projectId)
       this.studentProjectNames[projectId] = projectName // Store the project name
+    },
+
+    handleRowClick (item) {
+      // Handle row click event here
+      console.log('Row clicked:', item)
+      // Navigate to a new page and pass the user's ID as route parameters
+      this.$router.push({
+        name: 'UserDetails',
+        params: { userId: item._id }
+      })
     }
   },
   mounted () {
@@ -479,5 +573,10 @@ export default {
 <style scoped>
 .v-btn i {
   color: white;
+}
+
+.clickable-row:hover {
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>

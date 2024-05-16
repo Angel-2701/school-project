@@ -38,11 +38,22 @@
         <!-- Main content -->
         <v-col cols="12" style="max-width: 1500px; margin: 0px auto">
           <v-card class="text-center" style="width: 100%; margin: 0px auto">
+            <template v-slot:text>
+              <v-text-field
+                v-model="search"
+                label="Search"
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                hide-details
+                single-line
+              ></v-text-field>
+            </template>
             <!-- Students Data -->
             <v-data-table
               v-if="studentsTable.length > 0"
               :items="studentsTable"
               align="center"
+              :search="search"
             >
               <template v-slot:top>
                 <v-toolbar flat color="blue darken-2">
@@ -94,139 +105,215 @@
       </v-main>
 
       <!-- Edit Dialog -->
-      <v-dialog v-model="editDialog" max-width="500">
+      <v-dialog v-model="editDialog" max-width="500" ref="editDialogForm">
         <v-card>
           <v-card-title>Edit Student</v-card-title>
           <v-card-text>
             <v-text-field
-              v-model="editedStudent.nombre"
+              v-model="student.nombre"
               label="Name"
+              required
+              :rules="[(v) => !!v || 'Name is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedStudent.apellido"
+              v-model="student.apellido"
               label="Last Name"
+              required
+              :rules="[(v) => !!v || 'Apellido Paterno is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedStudent.apellidoM"
+              v-model="student.apellidoM"
               label="Apellido Materno"
+              required
+              :rules="[(v) => !!v || 'Apellido Materno is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedStudent.correo"
+              v-model="student.correo"
               label="Email"
+              required
+              :rules="[(v) => !!v || 'Email is required']"
             ></v-text-field>
             <v-select
-              v-model="editedStudent.project"
+              v-model="student.project"
               :items="projects.map((project) => project.name)"
               label="Select Project"
+              required
+              :rules="[(v) => !!v || 'Project is required']"
             ></v-select>
-
             <v-text-field
-              v-model="editedStudent.carrera"
+              v-model="student.carrera"
               label="Carrera"
+              required
+              :rules="[(v) => !!v || 'Carrera is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedStudent.numeroTelefonico"
+              v-model="student.numeroTelefonico"
               label="Phone Number"
               type="number"
+              required
+              :rules="[(v) => !!v || 'Phone Number is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedStudent.empresa"
+              v-model="student.empresa"
               label="Empresa"
+              required
+              :rules="[(v) => !!v || 'Empresa is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedStudent.periodo"
+              v-model="student.periodo"
               label="Periodo"
+              required
+              :rules="[(v) => !!v || 'Periodo is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedStudent.asesorExterno.nombre"
+              v-model="student.asesorExterno.nombre"
               label="Nombre Asesor externo"
+              required
+              :rules="[(v) => !!v || 'Nombre del Asesor is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedStudent.asesorExterno.correo"
+              v-model="student.asesorExterno.correo"
               label="Correo Asesor externo"
+              required
+              :rules="[(v) => !!v || 'Correo del asesor is required']"
             ></v-text-field>
             <v-text-field
-              v-model="editedStudent.asesorExterno.telefono"
+              v-model="student.asesorExterno.telefono"
               label="External Advisor Number"
               type="number"
+              required
+              :rules="[(v) => !!v || 'Phone Number is required']"
             ></v-text-field>
             <!-- Add more fields as needed -->
           </v-card-text>
           <v-card-actions>
-            <v-btn color="blue darken-2" @click="saveEditedStudent">Save</v-btn>
+            <v-btn
+              color="blue darken-2"
+              @click="saveEditedStudent"
+              :disabled="!isEditFormValid"
+              >Save</v-btn
+            >
             <v-btn @click="cancelEdit">Cancel</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
 
       <!-- Create Dialog -->
-      <v-dialog v-model="createDialog" max-width="500">
+      <v-dialog v-model="createDialog" max-width="500" ref="createDialogForm">
         <v-card>
           <v-card-title>Create New Student</v-card-title>
           <v-card-text>
             <!-- <v-text-field v-model="newStudent._id" label="ID"></v-text-field> Remove this line -->
-            <v-text-field v-model="newStudent._id" label="ID"></v-text-field>
             <v-text-field
-              v-model="newStudent.nombre"
+              v-model="student._id"
+              label="ID"
+              type="number"
+              required
+              :rules="[
+                (v) => {
+                  console.log('ID value:', v);
+                  return !!v || 'ID is required';
+                },
+                (v) => {
+                  const isValid = /^[0-9]+$/.test(v);
+                  console.log('Is ID valid?', isValid);
+                  return isValid || 'ID must contain only numbers';
+                },
+              ]"
+            ></v-text-field>
+            <v-text-field
+              v-model="student.nombre"
               label="Name"
+              required
+              :rules="[(v) => !!v || 'Name is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newStudent.apellido"
+              v-model="student.apellido"
               label="Last Name"
+              required
+              :rules="[(v) => !!v || 'Apellido Paterno is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newStudent.apellidoM"
+              v-model="student.apellidoM"
               label="Apellido Materno"
+              required
+              :rules="[(v) => !!v || 'Apellido Materno is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newStudent.correo"
+              v-model="student.correo"
               label="Email"
+              required
+              :rules="[(v) => !!v || 'Email is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newStudent.contraseña"
+              v-model="student.contraseña"
               label="Password"
               type="password"
+              required
+              :rules="[(v) => !!v || 'Password is required']"
             ></v-text-field>
             <!-- Add dropdown menu for projects -->
             <v-select
-              v-model="newStudent.project"
+              v-model="student.project"
               :items="projects.map((project) => project.name)"
               label="Select Project"
+              required
+              :rules="[(v) => !!v || 'Project is required']"
             ></v-select>
             <v-text-field
-              v-model="newStudent.carrera"
+              v-model="student.carrera"
               label="Carrera"
+              required
+              :rules="[(v) => !!v || 'Carrera is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newStudent.numeroTelefonico"
+              v-model="student.numeroTelefonico"
               label="Phone Number"
               type="number"
+              required
+              :rules="[(v) => !!v || 'Phone Number is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newStudent.empresa"
+              v-model="student.empresa"
               label="Empresa"
+              required
+              :rules="[(v) => !!v || 'Empresa is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newStudent.periodo"
+              v-model="student.periodo"
               label="Periodo"
+              required
+              :rules="[(v) => !!v || 'Periodo is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newStudent.asesorExterno.nombre"
+              v-model="student.asesorExterno.nombre"
               label="Nombre Asesor externo"
+              required
+              :rules="[(v) => !!v || 'Nombre del Asesor is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newStudent.asesorExterno.correo"
+              v-model="student.asesorExterno.correo"
               label="Correo Asesor externo"
+              required
+              :rules="[(v) => !!v || 'Correo del asesor is required']"
             ></v-text-field>
             <v-text-field
-              v-model="newStudent.asesorExterno.telefono"
+              v-model="student.asesorExterno.telefono"
               label="External Advisor Number"
               type="number"
+              required
+              :rules="[(v) => !!v || 'Telefono del asesor is required']"
             ></v-text-field>
+
             <!-- Add more fields as needed -->
           </v-card-text>
           <v-card-actions>
-            <v-btn color="blue darken-2" @click="saveNewStudent">Save</v-btn>
+            <v-btn
+              color="blue darken-2"
+              :disabled="!isCreateFormValid"
+              @click="saveNewStudent"
+              >Save</v-btn
+            >
             <v-btn @click="cancelCreate">Cancel</v-btn>
           </v-card-actions>
         </v-card>
@@ -253,7 +340,7 @@ export default {
       userName: 'John Doe',
       drawer: false,
       editDialog: false,
-      editedStudent: {
+      student: {
         _id: '',
         nombre: '',
         apellido: '',
@@ -266,33 +353,63 @@ export default {
         periodo: '',
         asesorExterno: {
           nombre: '',
-          apellido: '',
+          telefono: '',
           correo: ''
         }
         // Add more fields as needed
       },
       createDialog: false,
-      newStudent: {
-        rol: 'student',
-        nombre: '',
-        apellido: '',
-        apellidoM: '',
-        correo: '',
-        project: '',
-        contraseña: '',
-        carrera: '',
-        numeroTelefonico: '',
-        empresa: '',
-        periodo: '',
-        asesorExterno: {
-          nombre: '',
-          apellido: '',
-          correo: ''
-        }
-        // Add more fields as needed
-      }
+      search: ''
     }
   },
+  computed: {
+    isCreateFormValid () {
+      // Check if the form reference exists
+      if (!this.$refs.createDialogForm) {
+        return false
+      }
+
+      // Manually validate each field
+      return (
+        this.student._id &&
+        this.student.nombre &&
+        this.student.apellido &&
+        this.student.apellidoM &&
+        this.student.correo &&
+        this.student.contraseña &&
+        this.student.project &&
+        this.student.carrera &&
+        this.student.numeroTelefonico &&
+        this.student.empresa &&
+        this.student.periodo &&
+        this.student.asesorExterno.nombre &&
+        this.student.asesorExterno.correo &&
+        this.student.asesorExterno.telefono
+      )
+    },
+    isEditFormValid () {
+      // Check if the form reference exists
+      if (!this.$refs.editDialogForm) {
+        return false
+      }
+
+      // Manually validate each field
+      return (
+        this.student.nombre &&
+        this.student.apellido &&
+        this.student.apellidoM &&
+        this.student.project &&
+        this.student.carrera &&
+        this.student.numeroTelefonico &&
+        this.student.empresa &&
+        this.student.periodo &&
+        this.student.asesorExterno.nombre &&
+        this.student.asesorExterno.correo &&
+        this.student.asesorExterno.telefono
+      )
+    }
+  },
+
   methods: {
     async fetchData () {
       try {
@@ -352,7 +469,7 @@ export default {
       const foundStudent = this.students.find((s) => s._id === student._id)
       if (foundStudent) {
         // If the student is found, copy its data to editedStudent
-        this.editedStudent = { ...foundStudent }
+        this.student = { ...foundStudent }
         this.editDialog = true
       } else {
         console.error(`Student with ID ${student._id} not found.`)
@@ -362,8 +479,8 @@ export default {
     async saveEditedStudent () {
       try {
         const response = await axios.put(
-          `http://localhost:3000/users/${this.editedStudent._id}`,
-          this.editedStudent
+          `http://localhost:3000/users/${this.student._id}`,
+          this.student
         )
         console.log('User updated successfully:', response.data)
         this.fetchData()
@@ -382,18 +499,22 @@ export default {
     },
     async saveNewStudent () {
       try {
+        // Validate the form
+        if (!this.isCreateFormValid) {
+          return // Exit if the form is not valid
+        }
         // Find the selected project object based on its name
         const selectedProject = this.projects.find(
-          (project) => project.name === this.newStudent.project
+          (project) => project.name === this.student.project
         )
         if (selectedProject) {
           // Save the project ID to the new student data
-          this.newStudent.project = selectedProject.id
+          this.student.project = selectedProject.id
         }
 
         const response = await axios.post(
           'http://localhost:3000/register',
-          this.newStudent
+          this.student
         )
         if (response.status === 201) {
           console.log('Student created successfully:', response.data)
@@ -424,7 +545,7 @@ export default {
     },
 
     selectProject (project) {
-      this.newStudent.project = project.name // Set the selected project name
+      this.student.project = project.name // Set the selected project name
       this.projectMenu = false // Close the dropdown menu
     },
     handleRowClick (item) {

@@ -7,6 +7,7 @@ import StudentsPage from '../components/StudentsPage.vue'
 import TeachersPage from '../components/TeachersPage.vue'
 import UserDetails from '../components/UserDetails.vue'
 import ProjectTable from '../components/ProjectTable.vue'
+import AsesoriasAlumno from '../components/AsesoriasAlumno.vue'
 
 const routes = [
   {
@@ -60,6 +61,12 @@ const routes = [
     name: 'ProjectTable',
     component: ProjectTable, // Your component for displaying project details
     props: true
+  },
+  {
+    path: '/student/asesorias/',
+    name: 'AsesoriasAlumno',
+    component: AsesoriasAlumno, // Your component for displaying project details
+    meta: { requiresAuth: true, role: 'student' }
   }
 ]
 

@@ -16,27 +16,37 @@
     </v-app-bar>
     <!-- Sidebar -->
     <v-navigation-drawer app v-model="drawer" color="blue darken-2" dark>
-        <v-list dense>
-          <v-list-item
-            v-for="(item, index) in sidebarItems"
-            :key="index"
-            @click="navigate(index)"
-          >
-            <v-list-item-action>
-              <v-icon>{{ item.icon }}</v-icon>
-            </v-list-item-action>
-            <v-list-item-content>
-              <v-list-item-title>{{ item.title }}</v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-        </v-list>
-      </v-navigation-drawer>
+      <v-list dense>
+        <v-list-item
+          v-for="(item, index) in sidebarItems"
+          :key="index"
+          @click="navigate(index)"
+        >
+          <v-list-item-action>
+            <v-icon>{{ item.icon }}</v-icon>
+          </v-list-item-action>
+          <v-list-item-content>
+            <v-list-item-title>{{ item.title }}</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+      </v-list>
+    </v-navigation-drawer>
     <v-main>
       <!-- Main content -->
       <v-col cols="12" style="max-width: 1500px; margin: 0px auto">
         <v-card class="text-center" style="width: 100%; margin: 0px auto">
+          <template v-slot:text>
+              <v-text-field
+                v-model="search"
+                label="Search"
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                hide-details
+                single-line
+              ></v-text-field>
+            </template>
           <!-- Students Data -->
-          <v-data-table v-if="users.length > 0" :items="users" align="center">
+          <v-data-table v-if="users.length > 0" :items="users" align="center" :search="search">
             <template v-slot:top>
               <v-toolbar flat color="blue darken-2">
                 <v-toolbar-title>{{ selectedProject.name }}</v-toolbar-title>
@@ -63,7 +73,7 @@
                 <td>{{ item.apellido }}</td>
                 <td>{{ item.apellidoM }}</td>
                 <td>{{ item.carrera }}</td>
-                <td>{{ item.project }}</td>
+                <td>{{ getProjectName(item.project) }}</td>
                 <td>
                   <!-- Use small prop to make the buttons smaller -->
                   <v-tooltip bottom>
@@ -190,7 +200,8 @@ export default {
       selectedUser: {},
       gradeOptions: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       enableConsultanciesDialog: false,
-      sidebarItems: [{ title: 'Projects', icon: 'mdi-folder-outline' }]
+      sidebarItems: [{ title: 'Projects', icon: 'mdi-folder-outline' }],
+      search: ''
     }
   },
   beforeRouteEnter (to, from, next) {
@@ -314,6 +325,10 @@ export default {
         name: 'UserDetails',
         params: { userId: item._id }
       })
+    },
+    getProjectName (projectId) {
+      const project = this.projects.find((proj) => proj._id === projectId)
+      return project ? project.name : 'Unknown'
     }
   },
   mounted () {

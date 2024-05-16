@@ -38,11 +38,22 @@
         <!-- Main content -->
         <v-col cols="12" style="max-width: 1500px; margin: 0px auto">
           <v-card class="text-center" style="width: 100%; margin: 0px auto">
+            <template v-slot:text>
+              <v-text-field
+                v-model="search"
+                label="Search"
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                hide-details
+                single-line
+              ></v-text-field>
+            </template>
             <!-- Projects Data -->
             <v-data-table
               v-if="projects.length > 0"
               :items="projects"
               align="center"
+              :search="search"
             >
               <template v-slot:top>
                 <v-toolbar flat color="blue darken-2">
@@ -96,14 +107,23 @@
             <v-text-field
               v-model="editedProjectName"
               label="Project Name"
+              required
+              :rules="[(v) => !!v || 'Project Name is required']"
             ></v-text-field>
             <v-text-field
               v-model="editedProjectCompany"
               label="Company"
+              required
+              :rules="[(v) => !!v || 'Company is required']"
             ></v-text-field>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="blue darken-2" @click="saveEditedProject">Save</v-btn>
+            <v-btn
+              color="blue darken-2"
+              @click="saveEditedProject"
+              :disabled="isEditSaveDisabled"
+              >Save</v-btn
+            >
             <v-btn @click="cancelEdit">Cancel</v-btn>
           </v-card-actions>
         </v-card>
@@ -114,18 +134,35 @@
         <v-card>
           <v-card-title>Create New Project</v-card-title>
           <v-card-text>
-            <v-text-field v-model="newProject._id" label="ID"></v-text-field>
+            <v-text-field
+              v-model="newProject._id"
+              label="ID"
+              required
+              :rules="[
+                (v) => !!v || 'ID is required',
+                (v) => /^[0-9]+$/.test(v) || 'ID must contain only numbers',
+              ]"
+            ></v-text-field>
             <v-text-field
               v-model="newProject.name"
               label="Project Name"
+              required
+              :rules="[(v) => !!v || 'Project Name is required']"
             ></v-text-field>
             <v-text-field
               v-model="newProject.company"
               label="Company"
+              required
+              :rules="[(v) => !!v || 'Company is required']"
             ></v-text-field>
           </v-card-text>
           <v-card-actions>
-            <v-btn color="blue darken-2" @click="saveNewProject">Save</v-btn>
+            <v-btn
+              color="blue darken-2"
+              @click="saveNewProject"
+              :disabled="isSaveDisabled"
+              >Save</v-btn
+            >
             <v-btn @click="cancelCreate">Cancel</v-btn>
           </v-card-actions>
         </v-card>
@@ -158,10 +195,37 @@ export default {
         name: '',
         company: '',
         _id: ''
-      }
+      },
+      search: ''
+    }
+  },
+  computed: {
+    // Compute whether the "Save" button should be disabled
+    isEditSaveDisabled () {
+      // Check if any required field is empty or invalid
+      return !this.isEditNameValid() || !this.isEditCompanyValid()
+    },
+    isSaveDisabled () {
+      // Check if any required field is empty or invalid
+      return !this.isIdValid() || !this.isNameValid() || !this.isCompanyValid()
     }
   },
   methods: {
+    isIdValid () {
+      return /^[0-9]+$/.test(this.newProject._id)
+    },
+    isNameValid () {
+      return !!this.newProject.name
+    },
+    isCompanyValid () {
+      return !!this.newProject.company
+    },
+    isEditNameValid () {
+      return !!this.editedProjectName
+    },
+    isEditCompanyValid () {
+      return !!this.editedProjectCompany
+    },
     async fetchData () {
       try {
         const response = await axios.get('http://localhost:3000/projects')
