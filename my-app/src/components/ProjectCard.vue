@@ -10,7 +10,7 @@
       @mouseleave="onMouseLeave"
     >
       <v-card-title class="project-name">{{ projectName }}</v-card-title>
-      <v-card-text class="student-count">{{ 55 }} Students</v-card-text>
+      <v-card-text class="student-count">{{ studentCount }} Alumnos</v-card-text>
     </v-card>
   </template>
 

@@ -41,7 +41,7 @@
             <template v-slot:text>
               <v-text-field
                 v-model="search"
-                label="Search"
+                label="Buscar"
                 prepend-inner-icon="mdi-magnify"
                 variant="outlined"
                 hide-details
@@ -54,10 +54,12 @@
               :items="teachers"
               align="center"
               :search="search"
+              items-per-page-text="Elementos por página"
+              pageText=""
             >
               <template v-slot:top>
                 <v-toolbar flat color="blue darken-2">
-                  <v-toolbar-title>Teachers</v-toolbar-title>
+                  <v-toolbar-title>Maestros</v-toolbar-title>
                   <v-divider class="mx-4" inset vertical></v-divider>
                   <v-spacer></v-spacer>
                   <v-btn icon color="blue darken-2" @click="openCreateDialog">
@@ -70,7 +72,7 @@
                   <th>{{ "ID" }}</th>
                   <th>{{ "Correo" }}</th>
                   <th>{{ "Nombre" }}</th>
-                  <th>{{ "Apellido" }}</th>
+                  <th>{{ "Apellido Paterno" }}</th>
                   <th>{{ "Apellido Materno" }}</th>
                   <th>{{ "Alumnos" }}</th>
                   <!-- Exclude numeroTelefonico from the headers -->
@@ -89,7 +91,7 @@
                       color="blue darken-2"
                       @click="showAssignedStudents(item, $event)"
                     >
-                      {{ item.alumnos.length }} Students
+                      {{ item.alumnos.length }} Alumnos
                     </v-btn>
                   </td>
                   <td>
@@ -119,10 +121,9 @@
         </v-col>
       </v-main>
       <!-- Show Assigned Students Dialog -->
-      <!-- Show Assigned Students Dialog -->
       <v-dialog v-model="showAssignedStudentsDialog" max-width="500">
         <v-card>
-          <v-card-title class="headline">Assigned Students</v-card-title>
+          <v-card-title class="headline">Alumnos Asignados</v-card-title>
           <v-card-text>
             <v-list>
               <v-list-item
@@ -136,8 +137,8 @@
                 <v-list-item-content>
                   <v-list-item-title class="font-weight-bold">
                     <span>ID:</span> {{ student._id }}<br />
-                    <span>Name:</span> {{ student.nombre }}<br />
-                    <span>Project:</span> {{ student.projectName }}
+                    <span>Nombre:</span> {{ student.nombre }}<br />
+                    <span>Proyecto:</span> {{ student.projectName }}
 
                     <!-- Modified to call getProjectName method -->
                   </v-list-item-title>
@@ -151,7 +152,7 @@
               dark
               large
               @click="showAssignedStudentsDialog = false"
-              >Close</v-btn
+              >Cerrar</v-btn
             >
           </v-card-actions>
         </v-card>
@@ -160,42 +161,42 @@
       <!-- Edit Dialog -->
       <v-dialog v-model="editDialog" max-width="500" ref="editDialogForm">
         <v-card>
-          <v-card-title>Edit Teacher</v-card-title>
+          <v-card-title>Editar Maestro</v-card-title>
           <v-card-text>
             <v-text-field
               v-model="teacher.nombre"
-              label="Name"
+              label="Nombre"
               required
-              :rules="[(v) => !!v || 'Name is required']"
+              :rules="[(v) => !!v || 'Nombre requerido']"
             ></v-text-field>
             <v-text-field
               v-model="teacher.apellido"
-              label="Last Name"
+              label="Apellido Paterno"
               required
-              :rules="[(v) => !!v || 'Apellido Paterno is required']"
+              :rules="[(v) => !!v || 'Apellido Paterno requerido']"
             ></v-text-field>
             <v-text-field
               v-model="teacher.apellidoM"
               label="Apellido Materno"
               required
-              :rules="[(v) => !!v || 'Apellido Materno is required']"
+              :rules="[(v) => !!v || 'Apellido Materno requerido']"
             ></v-text-field>
             <v-text-field
               v-model="teacher.numeroTelefonico"
-              label="Telefono"
+              label="Número Telefónico"
               type="number"
               required
-              :rules="[(v) => !!v || 'Phone Number is required']"
+              :rules="[(v) => !!v || 'Número Telefónico requerido']"
             ></v-text-field>
             <!-- Add v-select to select students -->
             <v-select
               v-model="teacher.alumnos"
               :items="students"
-              label="Assign students (max 5)"
+              label="Selecciona alumnos (max 5)"
               multiple
               chips
               required
-              :rules="[(v) => !!v || 'Alumnos is required']"
+              :rules="[(v) => !!v || 'Alumnos son requeridos']"
               @update:modelValue="limitSelection(false)"
             ></v-select>
             <!-- Add more fields as needed -->
@@ -205,9 +206,9 @@
               color="blue darken-2"
               @click="saveEditedTeacher"
               :disabled="!isEditFormValid"
-              >Save</v-btn
+              >Guardar</v-btn
             >
-            <v-btn @click="cancelEdit">Cancel</v-btn>
+            <v-btn @click="cancelEdit">Cancelar</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -215,7 +216,7 @@
       <!-- Create Dialog -->
       <v-dialog v-model="createDialog" max-width="500" ref="createDialogForm">
         <v-card>
-          <v-card-title>Create New Teacher</v-card-title>
+          <v-card-title>Crear Nuevo Maestro</v-card-title>
           <v-card-text>
             <v-text-field
               v-model="teacher._id"
@@ -235,59 +236,64 @@
             ></v-text-field>
             <v-text-field
               v-model="teacher.nombre"
-              label="Name"
+              label="Nombre"
               required
-              :rules="[(v) => !!v || 'Name is required']"
+              :rules="[(v) => !!v || 'Nombre requerido']"
             ></v-text-field>
             <v-text-field
               v-model="teacher.apellido"
-              label="Last Name"
+              label="Apellido Paterno"
               required
-              :rules="[(v) => !!v || 'Apellido Paterno is required']"
+              :rules="[(v) => !!v || 'Apellido Paterno requerido']"
             ></v-text-field>
             <v-text-field
               v-model="teacher.apellidoM"
               label="Apellido Materno"
               required
-              :rules="[(v) => !!v || 'Apellido Materno is required']"
+              :rules="[(v) => !!v || 'Apellido Materno requerido']"
             ></v-text-field>
             <v-text-field
               v-model="teacher.numeroTelefonico"
-              label="Telefono"
+              label="Número Telefónico"
               type="number"
               required
-              :rules="[(v) => !!v || 'Phone Number is required']"
+              :rules="[(v) => !!v || 'Número Telefónico requerido']"
             ></v-text-field>
             <v-text-field
               v-model="teacher.correo"
-              label="Email"
+              label="Correo Electrónico"
               required
-              :rules="[(v) => !!v || 'Email is required']"
+              :rules="[(v) => !!v || 'Correo requerido']"
             ></v-text-field>
             <v-text-field
               v-model="teacher.contraseña"
-              label="Password"
+              label="Contraseña"
               type="password"
               required
-              :rules="[(v) => !!v || 'Password is required']"
+              :rules="[(v) => !!v || 'Contraseña requerida']"
             ></v-text-field>
             <div>
               <v-select
                 v-model="teacher.alumnos"
                 :items="students"
-                label="Assign students (max 5)"
+                label="Selecciona alumnos (max 5)"
                 multiple
                 chips
                 required
-                :rules="[(v) => !!v || 'Alumnos is required']"
+                :rules="[(v) => !!v || 'Alumnos requeridos']"
                 @update:modelValue="limitSelection(true)"
               ></v-select>
             </div>
             <!-- Add more fields as needed -->
           </v-card-text>
           <v-card-actions>
-            <v-btn color="blue darken-2" @click="saveNewTeacher" :disabled="!isCreateFormValid">Save</v-btn>
-            <v-btn @click="cancelCreate">Cancel</v-btn>
+            <v-btn
+              color="blue darken-2"
+              @click="saveNewTeacher"
+              :disabled="!isCreateFormValid"
+              >Guardar</v-btn
+            >
+            <v-btn @click="cancelCreate">Cancelar</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -306,11 +312,11 @@ export default {
       selectedOptions: [],
       teachers: [],
       sidebarItems: [
-        { title: 'Projects', icon: 'mdi-folder-outline' },
-        { title: 'Students', icon: 'mdi-account-plus-outline' },
-        { title: 'Teachers', icon: 'mdi-account-tie' }
+        { title: 'Proyectos', icon: 'mdi-folder-outline' },
+        { title: 'Alumnos', icon: 'mdi-account-plus-outline' },
+        { title: 'Maestros', icon: 'mdi-account-tie' }
       ],
-      userName: 'John Doe',
+      userName: localStorage.getItem('userName'),
       drawer: false,
       editDialog: false,
       teacher: {
@@ -413,7 +419,7 @@ export default {
         // Fetch project names for each student's project
         const projectNamesPromises = updatedAssignedStudents.map(
           async (student) => {
-            const projectName = await this.getProjectName(student.project)
+            const projectName = await this.getProjectName(student.proyecto)
             return { ...student, projectName }
           }
         )
@@ -496,6 +502,7 @@ export default {
       this.editDialog = false
     },
     openCreateDialog () {
+      this.resetTeacher()
       this.createDialog = true
       this.fetchStudents()
     },
@@ -542,7 +549,7 @@ export default {
           `http://localhost:3000/projects/${projectId}`
         )
         const data = response.data // Assuming the project name is stored in the 'name' field
-        return data.name
+        return data.nombre
       } catch (error) {
         console.error('Error fetching project name:', error)
         return 'Unknown' // Return a default value if an error occurs
@@ -561,6 +568,19 @@ export default {
         name: 'UserDetails',
         params: { userId: item._id }
       })
+    },
+
+    resetTeacher () {
+      this.teacher = {
+        _id: '',
+        nombre: '',
+        apellido: '',
+        correo: '',
+        contraseña: '',
+        alumnos: [],
+        apellidoM: '',
+        numeroTelefonico: ''
+      }
     }
   },
   mounted () {

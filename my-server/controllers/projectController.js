@@ -56,12 +56,12 @@ exports.deleteProject = async (req, res) => {
 exports.createProject = async (req, res) => {
   try {
     // Extract project data from the request body
-    const { company, name, _id } = req.body;
+    const { empresa, nombre, _id } = req.body;
 
     // Create a new project instance with only required fields
     const newProject = new Project({
-      company,
-      name,
+      empresa,
+      nombre,
       _id,
     });
 

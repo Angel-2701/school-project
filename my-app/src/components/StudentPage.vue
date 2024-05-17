@@ -38,21 +38,21 @@
         <v-col cols="12" style="max-width: 1000px; margin: 0 auto">
           <v-card class="mx-auto" max-width="800">
             <v-card-title class="blue darken-2 white--text">
-              Project Information
+              Información del Proyecto
             </v-card-title>
             <v-card-text>
               <v-row>
                 <v-col cols="12">
                   <v-text-field
-                    v-model="project.name"
-                    label="Project Name"
+                    v-model="project.nombre"
+                    label="Proyecto"
                     readonly
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12">
                   <v-text-field
-                    v-model="project.company"
-                    label="Company"
+                    v-model="project.empresa"
+                    label="Empresa"
                     readonly
                   ></v-text-field>
                 </v-col>
@@ -62,7 +62,7 @@
                 <v-col cols="12" md="4" class="d-flex">
                   <v-file-input
                     v-model="file1"
-                    label="Upload File 1"
+                    label="Cargar seguimiento 1"
                     prepend-icon="mdi-upload"
                     type="file"
                     :disabled="file1Uploaded"
@@ -73,7 +73,7 @@
                 <v-col cols="12" md="4" class="d-flex">
                   <v-file-input
                     v-model="file2"
-                    label="Upload File 2"
+                    label="Cargar seguimiento 2"
                     prepend-icon="mdi-upload"
                     type="file"
                     :disabled="!file1Uploaded || file2Uploaded"
@@ -84,7 +84,7 @@
                 <v-col cols="12" md="4" class="d-flex">
                   <v-file-input
                     v-model="file3"
-                    label="Upload File 3"
+                    label="Cargar seguimiento 3"
                     prepend-icon="mdi-upload"
                     type="file"
                     :disabled="!file2Uploaded"
@@ -97,7 +97,7 @@
             <v-divider class="my-4"></v-divider>
             <div v-if="pdfFiles.length > 0">
               <v-card-title class="blue darken-2 white--text">
-                Uploaded PDF Files
+                ARCHIVOS SUBIDOS
               </v-card-title>
               <v-row>
                 <v-col
@@ -123,7 +123,7 @@
                         color="blue darken-2"
                         block
                       >
-                        Download
+                        Descargar
                       </v-btn>
                     </v-card-actions>
                   </v-card>
@@ -132,7 +132,7 @@
             </div>
             <v-card-actions>
               <v-btn color="blue darken-2" @click="uploadFiles">
-                Submit File {{ nextFileNumber }}
+                Subir seguimiento {{ nextFileNumber }}
               </v-btn>
             </v-card-actions>
           </v-card>
@@ -148,6 +148,7 @@ import axios from 'axios'
 export default {
   data () {
     return {
+      userName: localStorage.getItem('userName'),
       selectedFile: null,
       pdfFiles: [],
       drawer: false,
@@ -219,7 +220,7 @@ export default {
         .get(`http://localhost:3000/users/${this.userId}`)
         .then((response) => {
           const user = response.data
-          const projectId = user.project
+          const projectId = user.proyecto
 
           if (!projectId) {
             console.error('No project ID found for the user.')

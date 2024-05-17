@@ -5,11 +5,11 @@ const projectSchema = new mongoose.Schema(
     _id: {
       type: Number,
     },
-    name: {
+    nombre: {
       type: String,
       required: true,
     },
-    company: {
+    empresa: {
       type: String,
       required: true,
     },

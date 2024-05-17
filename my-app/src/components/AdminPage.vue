@@ -41,7 +41,7 @@
             <template v-slot:text>
               <v-text-field
                 v-model="search"
-                label="Search"
+                label="Buscar"
                 prepend-inner-icon="mdi-magnify"
                 variant="outlined"
                 hide-details
@@ -54,10 +54,12 @@
               :items="projects"
               align="center"
               :search="search"
+              items-per-page-text = "Elementos por página"
+              pageText = ""
             >
               <template v-slot:top>
                 <v-toolbar flat color="blue darken-2">
-                  <v-toolbar-title>Projects</v-toolbar-title>
+                  <v-toolbar-title>Proyectos</v-toolbar-title>
                   <v-divider class="mx-4" inset vertical></v-divider>
                   <v-spacer></v-spacer>
                   <v-btn icon color="blue darken-2" @click="openCreateDialog">
@@ -102,19 +104,19 @@
       <!-- Edit Dialog -->
       <v-dialog v-model="editDialog" max-width="500">
         <v-card>
-          <v-card-title>Edit Project Name</v-card-title>
+          <v-card-title>Editar Proyecto</v-card-title>
           <v-card-text>
             <v-text-field
               v-model="editedProjectName"
-              label="Project Name"
+              label="Nombre del Proyecto"
               required
-              :rules="[(v) => !!v || 'Project Name is required']"
+              :rules="[(v) => !!v || 'Proyecto requerido']"
             ></v-text-field>
             <v-text-field
               v-model="editedProjectCompany"
-              label="Company"
+              label="Empresa"
               required
-              :rules="[(v) => !!v || 'Company is required']"
+              :rules="[(v) => !!v || 'Empresa requerida']"
             ></v-text-field>
           </v-card-text>
           <v-card-actions>
@@ -122,9 +124,9 @@
               color="blue darken-2"
               @click="saveEditedProject"
               :disabled="isEditSaveDisabled"
-              >Save</v-btn
+              >Guardar</v-btn
             >
-            <v-btn @click="cancelEdit">Cancel</v-btn>
+            <v-btn @click="cancelEdit">Cancelar</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -132,28 +134,28 @@
       <!-- Create Dialog -->
       <v-dialog v-model="createDialog" max-width="500">
         <v-card>
-          <v-card-title>Create New Project</v-card-title>
+          <v-card-title>Crear Nuevo Proyecto</v-card-title>
           <v-card-text>
             <v-text-field
               v-model="newProject._id"
               label="ID"
               required
               :rules="[
-                (v) => !!v || 'ID is required',
-                (v) => /^[0-9]+$/.test(v) || 'ID must contain only numbers',
+                (v) => !!v || 'ID requerido',
+                (v) => /^[0-9]+$/.test(v) || 'ID debe contener solo números',
               ]"
             ></v-text-field>
             <v-text-field
-              v-model="newProject.name"
-              label="Project Name"
+              v-model="newProject.nombre"
+              label="Nombre del Proyecto"
               required
-              :rules="[(v) => !!v || 'Project Name is required']"
+              :rules="[(v) => !!v || 'Nombre del Proyecto requerido']"
             ></v-text-field>
             <v-text-field
-              v-model="newProject.company"
-              label="Company"
+              v-model="newProject.empresa"
+              label="Empresa"
               required
-              :rules="[(v) => !!v || 'Company is required']"
+              :rules="[(v) => !!v || 'Empresa requerida']"
             ></v-text-field>
           </v-card-text>
           <v-card-actions>
@@ -161,9 +163,9 @@
               color="blue darken-2"
               @click="saveNewProject"
               :disabled="isSaveDisabled"
-              >Save</v-btn
+              >Guardar</v-btn
             >
-            <v-btn @click="cancelCreate">Cancel</v-btn>
+            <v-btn @click="cancelCreate">Cancelar</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -180,9 +182,9 @@ export default {
       projects: [],
       tableHeaders: [],
       sidebarItems: [
-        { title: 'Projects', icon: 'mdi-folder-outline' },
-        { title: 'Students', icon: 'mdi-account-plus-outline' },
-        { title: 'Teachers', icon: 'mdi-account-tie' }
+        { title: 'Proyectos', icon: 'mdi-folder-outline' },
+        { title: 'Alumnos', icon: 'mdi-account-plus-outline' },
+        { title: 'Maestros', icon: 'mdi-account-tie' }
       ],
       userName: localStorage.getItem('userName'), // Retrieve the user's name from localStorage
       drawer: false,
@@ -192,8 +194,8 @@ export default {
       editedProjectCompany: '',
       createDialog: false,
       newProject: {
-        name: '',
-        company: '',
+        nombre: '',
+        empresa: '',
         _id: ''
       },
       search: ''
@@ -215,10 +217,10 @@ export default {
       return /^[0-9]+$/.test(this.newProject._id)
     },
     isNameValid () {
-      return !!this.newProject.name
+      return !!this.newProject.nombre
     },
     isCompanyValid () {
-      return !!this.newProject.company
+      return !!this.newProject.empresa
     },
     isEditNameValid () {
       return !!this.editedProjectName
@@ -277,17 +279,17 @@ export default {
       // Stop the propagation of the click event
       event.stopPropagation()
 
-      this.editedProjectName = project.name
+      this.editedProjectName = project.nombre
       this.editedProjectId = project._id
-      this.editedProjectCompany = project.company
+      this.editedProjectCompany = project.empresa
       this.editDialog = true
     },
 
     saveEditedProject () {
       // Create an object with the updated project data
       const updatedProject = {
-        name: this.editedProjectName, // Assuming the only editable field is the project name
-        company: this.editedProjectCompany
+        nombre: this.editedProjectName, // Assuming the only editable field is the project name
+        empresa: this.editedProjectCompany
       }
 
       // Make an HTTP PUT request to update the project

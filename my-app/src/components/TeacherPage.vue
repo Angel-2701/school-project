@@ -39,7 +39,7 @@
         <v-row>
           <v-col
             v-for="project in projects"
-            :key="project.id"
+            :key="project._id"
             cols="12"
             sm="6"
             md="4"
@@ -47,7 +47,8 @@
             xl="2"
           >
             <ProjectCard
-              :projectName="project.name"
+              :projectName="project.nombre"
+              :studentCount="getStudentsCount(project._id)"
               @click="onClick(project)"
             />
           </v-col>
@@ -71,12 +72,18 @@ export default {
       showProjects: true,
       projects: [],
       students: [],
-      sidebarItems: [{ title: 'Projects', icon: 'mdi-folder-outline' }],
+      sidebarItems: [{ title: 'Proyectos', icon: 'mdi-folder-outline' }],
       drawer: false,
       userName: localStorage.getItem('userName')
     }
   },
   methods: {
+    getStudentsCount (projectId) {
+      const a = this.students.filter(
+        (student) => student.proyecto === projectId
+      )
+      return a.length
+    },
     async fetchData () {
       try {
         const teacherResponse = await axios.get(
@@ -93,7 +100,7 @@ export default {
           teacher.alumnos.includes(student._id)
         )
 
-        const projectIds = teacherStudents.map((student) => student.project)
+        const projectIds = teacherStudents.map((student) => student.proyecto)
 
         const projectsResponse = await axios.get(
           'http://localhost:3000/projects'

@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-card v-if="user" class="user-card">
-      <v-card-title class="user-card-title blue darken-2">User Details</v-card-title>
+      <v-card-title class="user-card-title blue darken-2">Detalles de Usuario</v-card-title>
       <v-card-text>
         <v-container>
           <v-row v-for="(value, key) in user" :key="key" class="user-detail-row">

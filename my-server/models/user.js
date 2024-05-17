@@ -18,25 +18,25 @@ const userSchema = new mongoose.Schema({
     telefono: Number,
   },
   periodo: String,
-  project: Number, // Optional field for projects as an array of numbers
-  grades: {
-    grade1: {
+  proyecto: Number, // Optional field for projects as an array of numbers
+  calificaciones: {
+    calificacion1: {
       type: Number,
       min: 0,
       max: 10,
     },
-    grade2: {
+    calificacion2: {
       type: Number,
       min: 0,
       max: 10,
     },
-    grade3: {
+    calificacion3: {
       type: Number,
       min: 0,
       max: 10,
     },
   },
-  consultancies: Number,
+  asesorias: Number,
   numeroTelefonico: Number,
   fechaAprobacion: String,
 });

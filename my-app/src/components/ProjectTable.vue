@@ -36,20 +36,27 @@
       <v-col cols="12" style="max-width: 1500px; margin: 0px auto">
         <v-card class="text-center" style="width: 100%; margin: 0px auto">
           <template v-slot:text>
-              <v-text-field
-                v-model="search"
-                label="Search"
-                prepend-inner-icon="mdi-magnify"
-                variant="outlined"
-                hide-details
-                single-line
-              ></v-text-field>
-            </template>
+            <v-text-field
+              v-model="search"
+              label="Buscar"
+              prepend-inner-icon="mdi-magnify"
+              variant="outlined"
+              hide-details
+              single-line
+            ></v-text-field>
+          </template>
           <!-- Students Data -->
-          <v-data-table v-if="users.length > 0" :items="users" align="center" :search="search">
+          <v-data-table
+            v-if="users.length > 0"
+            :items="users"
+            align="center"
+            :search="search"
+            items-per-page-text="Elementos por página"
+            pageText=""
+          >
             <template v-slot:top>
               <v-toolbar flat color="blue darken-2">
-                <v-toolbar-title>{{ selectedProject.name }}</v-toolbar-title>
+                <v-toolbar-title>{{ selectedProject.nombre }}</v-toolbar-title>
                 <v-divider class="mx-4" inset vertical></v-divider>
                 <v-spacer></v-spacer>
                 <!-- Removed the button for creating a new project -->
@@ -59,7 +66,7 @@
               <tr>
                 <th>{{ "ID" }}</th>
                 <th>{{ "Nombre" }}</th>
-                <th>{{ "Apellido" }}</th>
+                <th>{{ "Apellido Paterno" }}</th>
                 <th>{{ "Apellido Materno" }}</th>
                 <th>{{ "Carrera" }}</th>
                 <th>{{ "Proyecto" }}</th>
@@ -73,7 +80,7 @@
                 <td>{{ item.apellido }}</td>
                 <td>{{ item.apellidoM }}</td>
                 <td>{{ item.carrera }}</td>
-                <td>{{ getProjectName(item.project) }}</td>
+                <td>{{ getProjectName(item.proyecto) }}</td>
                 <td>
                   <!-- Use small prop to make the buttons smaller -->
                   <v-tooltip bottom>
@@ -91,7 +98,7 @@
                         >
                       </v-btn>
                     </template>
-                    <span>Assign Grades</span>
+                    <span>Asignar Calificaciones</span>
                   </v-tooltip>
 
                   <v-btn
@@ -115,39 +122,54 @@
     <v-dialog v-model="editDialog" max-width="800">
       <v-card>
         <v-card-title class="headline">
-          Assign Grades to {{ selectedUser.nombre }}
+          Asignar Calificaciones a {{ selectedUser.nombre }}
           {{ selectedUser.apellido }}
         </v-card-title>
         <v-card-text>
           <v-row>
             <v-col cols="4">
-              <v-select
-                v-model="selectedUser.grades.grade1"
+              <v-text-field
+                v-model="selectedUser.calificaciones.calificacion1"
                 :items="gradeOptions"
-                label="Grade 1"
-              ></v-select>
+                label="Calificación 1"
+                type="number"
+                :rules="[
+                  (v) =>
+                    (v >= 1 && v <= 100) || 'Debe ser un número entre 1 y 100',
+                ]"
+              ></v-text-field>
             </v-col>
             <v-col cols="4">
-              <v-select
-                v-model="selectedUser.grades.grade2"
+              <v-text-field
+                v-model="selectedUser.calificaciones.calificacion2"
                 :items="gradeOptions"
-                label="Grade 2"
-              ></v-select>
+                label="Calificación 2"
+                type="number"
+                :rules="[
+                  (v) =>
+                    (v >= 1 && v <= 100) || 'Debe ser un número entre 1 y 100',
+                ]"
+              ></v-text-field>
             </v-col>
             <v-col cols="4">
-              <v-select
-                v-model="selectedUser.grades.grade3"
+              <v-text-field
+                v-model="selectedUser.calificaciones.calificacion3"
                 :items="gradeOptions"
-                label="Grade 3"
-              ></v-select>
+                label="Calificación 3"
+                type="number"
+                :rules="[
+                  (v) =>
+                    (v >= 1 && v <= 100) || 'Debe ser un número entre 1 y 100',
+                ]"
+              ></v-text-field>
             </v-col>
           </v-row>
         </v-card-text>
         <v-card-actions>
           <v-btn color="blue darken-1" text @click="editDialog = false"
-            >Cancel</v-btn
+            >Cancelar</v-btn
           >
-          <v-btn color="blue darken-1" text @click="saveGrades">Save</v-btn>
+          <v-btn color="blue darken-1" text @click="saveGrades">Guardar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -156,13 +178,13 @@
     <v-dialog v-model="enableConsultanciesDialog" max-width="800">
       <v-card>
         <v-card-title class="headline">
-          Enable Consultancies for {{ selectedStudent.nombre }}
+          Habilitar Asesorías para {{ selectedStudent.nombre }}
           {{ selectedStudent.apellido }}
         </v-card-title>
         <v-card-text>
           <v-text-field
-            v-model="selectedStudent.consultancies"
-            label="Number of Consultancies (Max: 16)"
+            v-model="selectedStudent.asesorias"
+            label="Número de asesorías (Max: 16)"
             type="number"
             max="16"
           ></v-text-field>
@@ -172,10 +194,10 @@
             color="blue darken-1"
             text
             @click="enableConsultanciesDialog = false"
-            >Cancel</v-btn
+            >Cancelar</v-btn
           >
           <v-btn color="blue darken-1" text @click="enableConsultancies"
-            >Enable</v-btn
+            >Habilitar</v-btn
           >
         </v-card-actions>
       </v-card>
@@ -231,7 +253,7 @@ export default {
         const teacherStudents = allStudents.filter((student) =>
           teacher.alumnos.includes(student._id)
         )
-        const projectIds = teacherStudents.map((student) => student.project)
+        const projectIds = teacherStudents.map((student) => student.proyecto)
 
         const projects = projectsResponse.data
         const filteredProjects = projects.filter((project) =>
@@ -241,7 +263,7 @@ export default {
         this.projects = filteredProjects
         this.students = teacherStudents
         this.users = this.students.filter(
-          (student) => student.project === this.selectedProject._id
+          (student) => student.proyecto === this.selectedProject._id
         )
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -251,8 +273,12 @@ export default {
     openGradeDialog (user, event) {
       event.stopPropagation()
       this.selectedUser = user
-      if (!this.selectedUser.grades) {
-        this.selectedUser.grades = { grade1: null, grade2: null, grade3: null }
+      if (!this.selectedUser.calificaciones) {
+        this.selectedUser.calificaciones = {
+          calificacion1: null,
+          calificacion2: null,
+          calificacion3: null
+        }
       }
       this.editDialog = true
     },
@@ -277,9 +303,7 @@ export default {
       this.enableConsultanciesDialog = true
     },
     enableConsultancies () {
-      const numberOfConsultancies = parseInt(
-        this.selectedStudent.consultancies
-      )
+      const numberOfConsultancies = parseInt(this.selectedStudent.asesorias)
       console.log('Number of Consultancies to Enable:', numberOfConsultancies)
       this.updateConsultancies(numberOfConsultancies)
     },
@@ -328,7 +352,7 @@ export default {
     },
     getProjectName (projectId) {
       const project = this.projects.find((proj) => proj._id === projectId)
-      return project ? project.name : 'Unknown'
+      return project ? project.nombre : 'Unknown'
     }
   },
   mounted () {
