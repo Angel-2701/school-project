@@ -5,4 +5,4 @@ const FileSchema = new mongoose.Schema({
   data: Buffer,
 });
 
-module.exports = mongoose.model("FileModel", FileSchema);
+module.exports = mongoose.model("c", FileSchema);

@@ -52,6 +52,26 @@ userSchema.add({
   },
 });
 
+// Add dynamic properties for storing file IDs
+userSchema.add({
+  seguimiento1: String,
+  seguimiento2: String,
+  seguimiento3: String,
+  archivos: {
+    type: Map,
+    of: String,
+  },
+});
+
+userSchema.add({
+  archivosAsesorias: [
+    {
+      type: String,
+      ref: "Asesoria",
+    },
+  ],
+});
+
 // Method to compare passwords
 userSchema.methods.comparePassword = async function (candidatePassword) {
   try {

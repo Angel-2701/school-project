@@ -130,6 +130,7 @@
                 v-for="student in assignedStudents"
                 :key="student.id"
                 class="mb-4"
+                @click="openFilesDialog(student)"
               >
                 <v-list-item-icon>
                   <v-icon>mdi-account</v-icon>
@@ -297,16 +298,28 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+
+      <FilesDialog
+        :isOpen="showFilesDialog"
+        :student="selectedStudent"
+        @update:isOpen="showFilesDialog = $event"
+      />
     </v-container>
   </v-app>
 </template>
 
 <script>
 import axios from 'axios'
+import FilesDialog from './FilesDialog.vue'
 
 export default {
+  components: {
+    FilesDialog
+  },
   data () {
     return {
+      selectedStudent: null,
+      showFilesDialog: false,
       studentProjectNames: {},
       students: [],
       selectedOptions: [],
@@ -372,6 +385,10 @@ export default {
     }
   },
   methods: {
+    openFilesDialog (student) {
+      this.selectedStudent = student
+      this.showFilesDialog = true // Open the dialog with the student's files
+    },
     limitSelection (isNewUser) {
       if (isNewUser && this.teacher.alumnos.length > 5) {
         alert('You can only select a maximum of 5 options.')

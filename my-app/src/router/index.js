@@ -8,6 +8,7 @@ import TeachersPage from '../components/TeachersPage.vue'
 import UserDetails from '../components/UserDetails.vue'
 import ProjectTable from '../components/ProjectTable.vue'
 import AsesoriasAlumno from '../components/AsesoriasAlumno.vue'
+import ArchivosAlumno from '../components/ArchivosAlumno.vue'
 
 const routes = [
   {
@@ -66,6 +67,12 @@ const routes = [
     path: '/student/asesorias/',
     name: 'AsesoriasAlumno',
     component: AsesoriasAlumno, // Your component for displaying project details
+    meta: { requiresAuth: true, role: 'student' }
+  },
+  {
+    path: '/student/archivos/',
+    name: 'ArchivosAlumno',
+    component: ArchivosAlumno, // Your component for displaying project details
     meta: { requiresAuth: true, role: 'student' }
   }
 ]

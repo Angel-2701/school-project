@@ -37,63 +37,78 @@
       <!-- Main Content -->
       <v-main>
         <v-col cols="12" style="max-width: 800px; margin: 0 auto">
-          <v-card class="mx-auto" max-width="600">
+          <v-card class="mx-auto" max-width="800">
             <v-card-title class="blue darken-2 white--text"
               >Asesorías</v-card-title
             >
             <v-card-text>
               <v-row>
                 <v-col cols="12">
-                  <v-text-field
-                    v-model="numberOfAsesorias"
-                    label="Number of Asesorías"
-                    type="number"
-                    min="1"
-                    @change="initializeAsesorias"
-                  ></v-text-field>
+                  <p>Número de asesorías asignadas: {{ numberOfAsesorias }}</p>
                 </v-col>
                 <v-divider class="my-4"></v-divider>
-                <v-col cols="6">
-                  <v-row
-                    v-for="(asesoria, index) in leftAsesorias"
-                    :key="index"
+                <v-row>
+                  <v-col
+                    v-for="(asesoria, index) in asesorias"
+                    :key="asesoria.id"
+                    cols="12"
+                    md="4"
+                    class="d-flex align-center"
                   >
-                    <v-col cols="12">
-                      <v-file-input
-                        v-model="asesoria.file"
-                        :label="'Upload File for Asesoría ' + (index + 1)"
-                        prepend-icon="mdi-upload"
-                      ></v-file-input>
-                      <v-btn color="blue darken-2" @click="submitFile(index)"
-                        >Submit</v-btn
+                    <v-card class="ma-2 pa-2" outlined>
+                      <v-card-text
+                        class="text-center"
+                        v-if="asesoria.submitted"
                       >
-                    </v-col>
-                  </v-row>
-                </v-col>
-                <v-col cols="6">
-                  <v-row
-                    v-for="(asesoria, index) in rightAsesorias"
-                    :key="index"
-                  >
-                    <v-col cols="12">
+                        <v-icon color="blue darken-2" size="48"
+                          >mdi-file-pdf-box</v-icon
+                        >
+                        <div>{{ asesoria.file.filename }}</div>
+                      </v-card-text>
+                      <v-divider v-if="asesoria.submitted"></v-divider>
                       <v-file-input
+                        v-if="!asesoria.submitted"
                         v-model="asesoria.file"
-                        :label="
-                          'Upload File for Asesoría ' +
-                          (leftAsesorias.length + index + 1)
-                        "
+                        :label="'Asesoría ' + (index + 1)"
                         prepend-icon="mdi-upload"
+                        :disabled="index !== nextEnabledIndex"
+                        accept="application/pdf"
+                        class="wide-field"
                       ></v-file-input>
                       <v-btn
+                        v-if="asesoria.submitted"
+                        :href="
+                          'data:application/octet-stream;base64,' +
+                          asesoria.file.data
+                        "
+                        :download="asesoria.file.filename"
                         color="blue darken-2"
-                        @click="submitFile(leftAsesorias.length + index)"
-                        >Submit</v-btn
+                        block
+                        >Descargar</v-btn
                       >
-                    </v-col>
-                  </v-row>
-                </v-col>
+                      <v-btn
+                        v-if="asesoria.submitted"
+                        color="red darken-2"
+                        block
+                        @click="deleteFile(index)"
+                        >Eliminar</v-btn
+                      >
+                    </v-card>
+                  </v-col>
+                </v-row>
               </v-row>
             </v-card-text>
+            <v-card-actions>
+              <v-btn
+                color="blue darken-2"
+                @click="submitFile"
+                :disabled="!currentAsesoria.file"
+                >Enviar Asesoría {{ nextEnabledIndex + 1 }}</v-btn
+              >
+              <v-btn color="blue darken-2" @click="downloadAllFiles"
+                >Descargar todas las asesorías</v-btn
+              >
+            </v-card-actions>
           </v-card>
         </v-col>
       </v-main>
@@ -102,27 +117,24 @@
 </template>
 
 <script>
+import axios from 'axios'
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
+
 export default {
   data () {
     return {
       drawer: false,
       sidebarItems: [
         { title: 'Proyecto', icon: 'mdi-folder-outline' },
-        { title: 'Asesorias', icon: 'mdi-account-plus-outline' }
+        { title: 'Asesorias', icon: 'mdi-account-plus-outline' },
+        { title: 'Archivos', icon: 'mdi-file-document-outline' }
       ],
-      userName: localStorage.getItem('userName'), // Retrieve the user's name from localStorage
-      numberOfAsesorias: 1, // Default to 1 asesoria
-      asesorias: [{ file: null }] // Initialize with one asesoria
-    }
-  },
-  computed: {
-    leftAsesorias () {
-      const half = Math.ceil(this.asesorias.length / 2)
-      return this.asesorias.slice(0, half)
-    },
-    rightAsesorias () {
-      const half = Math.ceil(this.asesorias.length / 2)
-      return this.asesorias.slice(half)
+      userName: localStorage.getItem('userName'),
+      numberOfAsesorias: 0,
+      asesorias: JSON.parse(localStorage.getItem('asesorias')) || [],
+      userId: localStorage.getItem('id'),
+      nextEnabledIndex: 0 // Index of the next enabled file input field
     }
   },
   methods: {
@@ -134,29 +146,182 @@ export default {
         case 1:
           this.$router.push('/student/asesorias')
           break
+        case 2:
+          this.$router.push('/student/archivos')
+          break
         default:
           break
       }
     },
     logout () {
-      // Logic to logout the user
-      // For example, you can clear any user data or tokens stored in localStorage
       localStorage.removeItem('token')
-
-      // Redirect the user to the login page
       this.$router.push('/login')
     },
     initializeAsesorias () {
-      // Initialize the asesorias array based on the number of asesorias
-      this.asesorias = Array.from({ length: this.numberOfAsesorias }, () => ({
-        file: null
-      }))
+      this.asesorias = Array.from(
+        { length: this.numberOfAsesorias },
+        (v, i) => ({
+          id: i + 1,
+          file: this.asesorias[i]?.file || null,
+          submitted: this.asesorias[i]?.submitted || false // Set submitted status based on existing data
+        })
+      )
+      // Find the next index to enable
+      this.nextEnabledIndex = this.asesorias.findIndex(
+        (asesoria) => !asesoria.submitted
+      )
+      if (this.nextEnabledIndex === -1) {
+        this.nextEnabledIndex = this.numberOfAsesorias
+      }
     },
-    submitFile (index) {
-      // Handle individual file submission logic
+    async submitFile () {
+      const index = this.nextEnabledIndex
+      const formData = new FormData()
       const asesoria = this.asesorias[index]
-      console.log(`File for Asesoría ${index + 1}:`, asesoria.file)
-      // You can implement file upload functionality here
+
+      if (asesoria.file && !asesoria.submitted) {
+        formData.append('file', asesoria.file)
+
+        try {
+          const response = await axios.post(
+            'http://localhost:3000/upload-asesoria',
+            formData,
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+            }
+          )
+
+          if (response.status === 201) {
+            const file = response.data.file
+            asesoria.submitted = true
+            asesoria.file = {
+              _id: file.id,
+              filename: file.filename
+            }
+
+            // Save the updated asesorias data in localStorage
+            localStorage.setItem('asesorias', JSON.stringify(this.asesorias))
+
+            // Send a PUT request to update the user with the file ID
+            await axios.put(`http://localhost:3000/users/${this.userId}`, {
+              archivosAsesorias: this.asesorias
+                .filter((a) => a.submitted)
+                .map((a) => a.file._id)
+            })
+
+            // Find and set the next enabled index
+            this.nextEnabledIndex = this.asesorias.findIndex(
+              (a) => !a.submitted
+            )
+            if (this.nextEnabledIndex === -1) {
+              this.nextEnabledIndex = this.numberOfAsesorias
+            }
+            this.fetchFileData()
+            window.alert('File uploaded successfully!') // Display alert
+            console.log('File uploaded successfully!')
+          } else {
+            console.error('Failed to upload file.')
+          }
+        } catch (error) {
+          console.error('Error uploading file:', error)
+        }
+      }
+    },
+    deleteFile (index) {
+      const asesoriaId = this.asesorias[index].file._id
+      axios
+        .delete(`http://localhost:3000/asesorias/${asesoriaId}`)
+        .then(async (response) => {
+          if (response.status === 200) {
+            this.asesorias[index].submitted = false
+            // Set file property to null instead of an empty object
+            this.asesorias[index].file = null
+            localStorage.setItem('asesorias', JSON.stringify(this.asesorias))
+            window.alert('File deleted successfully!')
+            // Update the next enabled index
+            this.nextEnabledIndex = index
+
+            // Update the user's asesorias in the database
+            const updatedAsesorias = this.asesorias
+              .filter((a) => a.submitted)
+              .map((a) => a.file._id)
+            await axios.put(`http://localhost:3000/users/${this.userId}`, {
+              archivosAsesorias: updatedAsesorias
+            })
+          } else {
+            console.error('Failed to delete file.')
+          }
+        })
+        .catch((error) => {
+          console.error('Error deleting file:', error)
+        })
+    },
+
+    async fetchAsesorias () {
+      try {
+        const response = await axios.get(
+          `http://localhost:3000/users/${this.userId}`
+        )
+        const userData = response.data
+        this.numberOfAsesorias = userData.asesorias
+        this.initializeAsesorias() // Initialize asesorias based on fetched number
+      } catch (error) {
+        console.error('Error fetching asesorías:', error)
+      }
+    },
+    async fetchFileData () {
+      try {
+        const response = await axios.get('http://localhost:3000/asesorias')
+        const files = response.data
+        // Update file objects with their data based on index
+        files.forEach((file, index) => {
+          if (this.asesorias[index]) {
+            this.asesorias[index].file = file
+          }
+        })
+      } catch (error) {
+        console.error('Error fetching file data:', error)
+      }
+    },
+    async downloadAllFiles () {
+      // Ensure the latest data is fetched before downloading
+      await this.fetchFileData()
+
+      const zip = new JSZip()
+      this.asesorias.forEach((asesoria, index) => {
+        if (asesoria.file && asesoria.file.data) {
+          const byteString = atob(asesoria.file.data)
+          const ab = new ArrayBuffer(byteString.length)
+          const ia = new Uint8Array(ab)
+          for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i)
+          }
+          zip.file(`filename_${index + 1}.pdf`, ab)
+        }
+      })
+
+      zip.generateAsync({ type: 'blob' }).then((content) => {
+        saveAs(content, 'asesorias.zip')
+      })
+    }
+  },
+  mounted () {
+    this.fetchAsesorias()
+    this.fetchFileData()
+  },
+  computed: {
+    currentAsesoria () {
+      return this.asesorias[this.nextEnabledIndex] || {}
+    },
+    leftAsesorias () {
+      const half = Math.ceil(this.asesorias.length / 2)
+      return this.asesorias.slice(0, half)
+    },
+    rightAsesorias () {
+      const half = Math.ceil(this.asesorias.length / 2)
+      return this.asesorias.slice(half)
     }
   }
 }
@@ -165,5 +330,13 @@ export default {
 <style scoped>
 .v-btn i {
   color: white;
+}
+
+.v-card {
+  width: 100%;
+}
+
+.wide-field {
+  width: 100%;
 }
 </style>

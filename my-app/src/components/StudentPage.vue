@@ -87,7 +87,7 @@
                     label="Cargar seguimiento 3"
                     prepend-icon="mdi-upload"
                     type="file"
-                    :disabled="!file2Uploaded"
+                    :disabled="!file2Uploaded || file3Uploaded"
                     @change="onFileChange(3, $event)"
                     accept="application/pdf"
                   ></v-file-input>
@@ -95,13 +95,13 @@
               </v-row>
             </v-card-text>
             <v-divider class="my-4"></v-divider>
-            <div v-if="pdfFiles.length > 0">
+            <div v-if="orderedPdfFiles.length > 0">
               <v-card-title class="blue darken-2 white--text">
                 ARCHIVOS SUBIDOS
               </v-card-title>
               <v-row>
                 <v-col
-                  v-for="(file, index) in pdfFiles"
+                  v-for="(file, index) in orderedPdfFiles"
                   :key="index"
                   cols="12"
                   md="4"
@@ -114,24 +114,35 @@
                       >
                       <div>{{ file.filename }}</div>
                     </v-card-text>
-                    <v-card-actions>
-                      <v-btn
-                        :href="
-                          'data:application/octet-stream;base64,' + file.data
-                        "
-                        :download="file.filename"
-                        color="blue darken-2"
-                        block
-                      >
-                        Descargar
-                      </v-btn>
-                    </v-card-actions>
+                    <v-divider></v-divider>
+                    <v-btn
+                      :href="
+                        'data:application/octet-stream;base64,' + file.data
+                      "
+                      :download="file.filename"
+                      color="blue darken-2"
+                      block
+                    >
+                      Descargar
+                    </v-btn>
+                    <v-btn
+                      color="red darken-2"
+                      block
+                      @click="deleteFile(file._id)"
+                    >
+                      Eliminar
+                    </v-btn>
                   </v-card>
                 </v-col>
               </v-row>
             </div>
+
             <v-card-actions>
-              <v-btn color="blue darken-2" @click="uploadFiles">
+              <v-btn
+                color="blue darken-2"
+                @click="uploadFiles"
+                :disabled="allFilesUploaded"
+              >
                 Subir seguimiento {{ nextFileNumber }}
               </v-btn>
             </v-card-actions>
@@ -148,13 +159,20 @@ import axios from 'axios'
 export default {
   data () {
     return {
+      file1Uploaded: localStorage.getItem('file1Uploaded') === 'true' || false,
+      file2Uploaded: localStorage.getItem('file2Uploaded') === 'true' || false,
+      file3Uploaded: localStorage.getItem('file3Uploaded') === 'true' || false,
+      file1Id: localStorage.getItem('file1Id') || null,
+      file2Id: localStorage.getItem('file2Id') || null,
+      file3Id: localStorage.getItem('file3Id') || null,
       userName: localStorage.getItem('userName'),
       selectedFile: null,
       pdfFiles: [],
       drawer: false,
       sidebarItems: [
         { title: 'Proyecto', icon: 'mdi-folder-outline' },
-        { title: 'Asesorias', icon: 'mdi-account-plus-outline' }
+        { title: 'Asesorias', icon: 'mdi-account-plus-outline' },
+        { title: 'Archivos', icon: 'mdi-file-document-outline' }
       ],
       userId: localStorage.getItem('id'), // Retrieve the user's name from localStorage
       project: {
@@ -163,10 +181,7 @@ export default {
       },
       file1: null,
       file2: null,
-      file3: null,
-      file1Uploaded: false,
-      file2Uploaded: false,
-      file3Uploaded: false
+      file3: null
     }
   },
   mounted () {
@@ -184,6 +199,29 @@ export default {
       } else {
         return 'All'
       }
+    },
+    allFilesUploaded () {
+      return this.file1Uploaded && this.file2Uploaded && this.file3Uploaded
+    },
+    orderedPdfFiles () {
+      const orderedFiles = []
+
+      if (this.file1Id) {
+        const file1 = this.getFileById(this.file1Id)
+        if (file1) orderedFiles.push(file1)
+      }
+
+      if (this.file2Id) {
+        const file2 = this.getFileById(this.file2Id)
+        if (file2) orderedFiles.push(file2)
+      }
+
+      if (this.file3Id) {
+        const file3 = this.getFileById(this.file3Id)
+        if (file3) orderedFiles.push(file3)
+      }
+
+      return orderedFiles
     }
   },
   methods: {
@@ -194,6 +232,9 @@ export default {
           break
         case 1:
           this.$router.push('/student/asesorias')
+          break
+        case 2:
+          this.$router.push('/student/archivos')
           break
         default:
           break
@@ -288,6 +329,20 @@ export default {
         if (response.status === 201) {
           alert(`File ${fileNumber} uploaded successfully!`)
           this[`file${fileNumber}Uploaded`] = true
+          localStorage.setItem(`file${fileNumber}Uploaded`, 'true')
+
+          // Extract the ID of the uploaded file
+          const fileId = response.data.file.id
+
+          // Save the file ID in local storage
+          this[`file${fileNumber}Id`] = fileId
+          localStorage.setItem(`file${fileNumber}Id`, fileId)
+
+          // Send a PUT request to update the user with the file ID
+          await axios.put(`http://localhost:3000/users/${this.userId}`, {
+            [`seguimiento${fileNumber}`]: fileId
+          })
+
           this.fetchPDFFiles() // After successful upload, fetch PDF files again
         } else {
           alert(`Failed to upload file ${fileNumber}.`)
@@ -297,23 +352,89 @@ export default {
         alert(`Error uploading file ${fileNumber}.`)
       }
     },
+
     async fetchPDFFiles () {
       try {
         const response = await axios.get('http://localhost:3000/files')
         this.pdfFiles = response.data
-        // Check which files have already been uploaded
-        this.pdfFiles.forEach((file) => {
-          if (file.filename === 'file1.pdf') {
-            this.file1Uploaded = true
-          } else if (file.filename === 'file2.pdf') {
-            this.file2Uploaded = true
-          } else if (file.filename === 'file3.pdf') {
-            this.file3Uploaded = true
-          }
-        })
+
+        // Update file IDs and uploaded status
+        this.setUploadedFileIds()
       } catch (error) {
         console.error('Error fetching PDF files:', error)
         alert('Error fetching PDF files.')
+      }
+    },
+    async deleteFile (fileId) {
+      try {
+        const response = await axios.delete(
+          `http://localhost:3000/files/${fileId}`
+        )
+        if (response.status === 200) {
+          alert('File deleted successfully!')
+          await this.updateUserFileProperty(fileId) // Update user's file property
+          this.fetchPDFFiles() // Refresh the list of PDF files
+        } else {
+          alert('Failed to delete file.')
+        }
+      } catch (error) {
+        console.error('Error deleting file:', error)
+        alert('Error deleting file.')
+      }
+    },
+
+    async updateUserFileProperty (fileId) {
+      try {
+        const userResponse = await axios.get(
+          `http://localhost:3000/users/${this.userId}`
+        )
+        const userData = userResponse.data
+
+        // Check which property contains the fileId to be deleted
+        let fileProperty
+        let deletedFileNumber
+
+        if (userData.seguimiento1 === fileId) {
+          fileProperty = 'seguimiento1'
+          deletedFileNumber = 1
+        } else if (userData.seguimiento2 === fileId) {
+          fileProperty = 'seguimiento2'
+          deletedFileNumber = 2
+        } else if (userData.seguimiento3 === fileId) {
+          fileProperty = 'seguimiento3'
+          deletedFileNumber = 3
+        }
+
+        if (fileProperty) {
+          await axios.put(`http://localhost:3000/users/${this.userId}`, {
+            [fileProperty]: null
+          })
+
+          // Update local state and localStorage
+          this[`file${deletedFileNumber}Uploaded`] = false
+          this[`file${deletedFileNumber}Id`] = null
+          localStorage.removeItem(`file${deletedFileNumber}Uploaded`)
+          localStorage.removeItem(`file${deletedFileNumber}Id`)
+        }
+      } catch (error) {
+        console.error('Error updating user file property:', error)
+      }
+    },
+
+    getFileById (fileId) {
+      return this.pdfFiles.find((file) => file._id === fileId)
+    },
+
+    setUploadedFileIds () {
+      for (let i = 1; i <= 3; i++) {
+        const fileId = localStorage.getItem(`file${i}Id`)
+        if (fileId) {
+          this[`file${i}Uploaded`] = true
+          this[`file${i}Id`] = fileId
+        } else {
+          this[`file${i}Uploaded`] = false
+          this[`file${i}Id`] = null
+        }
       }
     }
   }

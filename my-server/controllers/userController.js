@@ -208,6 +208,9 @@ exports.getStudents = async (req, res) => {
       asesorExterno: student.asesorExterno,
       empresa: student.empresa,
       periodo: student.periodo,
+      seguimiento1: student.seguimiento1 ?? null,
+      seguimiento2: student.seguimiento2 ?? null,
+      seguimiento3: student.seguimiento3 ?? null,
     }));
 
     res.status(200).json(filteredStudents);
