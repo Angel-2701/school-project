@@ -19,9 +19,9 @@
                     <v-icon>mdi-file-pdf</v-icon>
                   </v-list-item-icon>
                   <v-list-item-content>
-                    <v-list-item-title
-                      >Seguimiento {{ index + 1 }}</v-list-item-title
-                    >
+                    <v-list-item-title>{{
+                      seguimientoLabels[index]
+                    }}</v-list-item-title>
                     <v-list-item-title>{{
                       seguimiento.filename
                     }}</v-list-item-title>
@@ -153,6 +153,12 @@ export default {
   },
   data () {
     return {
+      seguimientoLabels: [
+        'Seguimiento 1',
+        'Seguimiento 2',
+        'Seguimiento 3'
+        // Add more seguimiento labels as needed
+      ],
       seguimientos: [],
       asesorias: [],
       archivos: {},
@@ -187,9 +193,25 @@ export default {
         this.student.seguimiento1,
         this.student.seguimiento2,
         this.student.seguimiento3
-      ].filter(Boolean)
-      this.seguimientos = await this.fetchFiles('uploads', seguimientoIds)
+      ]
+
+      // Iterate over seguimientoIds to remove labels for null seguimientos
+      seguimientoIds.forEach((id, index) => {
+        if (id === null) {
+          // Use splice to delete the element at the current index
+          this.seguimientoLabels.splice(index, 1)
+        }
+      })
+
+      // Filter out null seguimiento IDs
+      const nonNullSeguimientoIds = seguimientoIds.filter((id) => id !== null)
+
+      this.seguimientos = await this.fetchFiles(
+        'uploads',
+        nonNullSeguimientoIds
+      )
     },
+
     async loadAsesorias () {
       const asesoriaIds = this.student.archivosAsesorias || []
       this.asesorias =
