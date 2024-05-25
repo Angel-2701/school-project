@@ -233,16 +233,16 @@ app.get("/asesorias", async (req, res) => {
 });
 
 const client = new MongoClient(MONGODB_URI);
-let gfsBucket;
 client.connect().then(() => {
   const db = client.db("school_system");
-  gfsBucket = new GridFSBucket(db, { bucketName: "uploads" });
+  gfsBucketUploads = new GridFSBucket(db, { bucketName: "uploads" });
+  gfsBucketArchivo = new GridFSBucket(db, { bucketName: "archivo" });
+  gfsBucketAsesoria = new GridFSBucket(db, { bucketName: "asesoria" });
 });
 
-// Define a route to fetch PDF files
-app.get("/files/:fileId", async (req, res) => {
+app.get("/files/:collection/:fileId", async (req, res) => {
   try {
-    const fileId = req.params.fileId;
+    const { collection, fileId } = req.params;
     if (!ObjectId.isValid(fileId)) {
       return res
         .status(400)
@@ -250,6 +250,23 @@ app.get("/files/:fileId", async (req, res) => {
     }
 
     const _id = new ObjectId(fileId);
+    let gfsBucket;
+    switch (collection) {
+      case "uploads":
+        gfsBucket = gfsBucketUploads;
+        break;
+      case "archivo":
+        gfsBucket = gfsBucketArchivo;
+        break;
+      case "asesoria":
+        gfsBucket = gfsBucketAsesoria;
+        break;
+      default:
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid collection" });
+    }
+
     const files = await gfsBucket.find({ _id }).toArray();
     if (!files.length) {
       return res
@@ -257,8 +274,28 @@ app.get("/files/:fileId", async (req, res) => {
         .json({ success: false, message: "File not found" });
     }
 
+    const file = files[0];
     const readStream = gfsBucket.openDownloadStream(_id);
-    readStream.pipe(res);
+    const chunks = [];
+
+    readStream.on("data", (chunk) => {
+      chunks.push(chunk);
+    });
+
+    readStream.on("end", () => {
+      const fileBuffer = Buffer.concat(chunks);
+      res.json({
+        filename: file.filename,
+        data: fileBuffer.toString("base64"),
+      });
+    });
+
+    readStream.on("error", (err) => {
+      console.error("Error reading file from MongoDB:", err);
+      res
+        .status(500)
+        .json({ success: false, message: "Internal Server Error" });
+    });
   } catch (error) {
     console.error("Error fetching file from MongoDB:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
@@ -301,6 +338,42 @@ app.get("/archivos", async (req, res) => {
     res.json(validFiles);
   } catch (error) {
     console.error("Error fetching archivo files from MongoDB:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+});
+
+app.delete("/files/:fileId", async (req, res) => {
+  try {
+    const fileId = req.params.fileId;
+    if (!mongoose.Types.ObjectId.isValid(fileId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid fileId" });
+    }
+
+    const db = mongoose.connection;
+    const gfs = Grid(db.db, mongoose.mongo);
+    gfs.collection("uploads");
+
+    const file = await gfs.files.findOne({
+      _id: new mongoose.Types.ObjectId(fileId),
+    });
+    if (!file) {
+      return res
+        .status(404)
+        .json({ success: false, message: "File not found" });
+    }
+
+    await gfs.files.deleteOne({ _id: new mongoose.Types.ObjectId(fileId) });
+    await gfs.db
+      .collection("asesoria.chunks")
+      .deleteMany({ files_id: new mongoose.Types.ObjectId(fileId) });
+
+    res
+      .status(200)
+      .json({ success: true, message: "file deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting file from MongoDB:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });

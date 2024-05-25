@@ -58,6 +58,12 @@ exports.createProject = async (req, res) => {
     // Extract project data from the request body
     const { empresa, nombre, _id } = req.body;
 
+    const existingProject = await Project.findOne({ _id });
+
+    if (existingProject) {
+      return res.status(400).json({ error: "ID ya existe" });
+    }
+
     // Create a new project instance with only required fields
     const newProject = new Project({
       empresa,

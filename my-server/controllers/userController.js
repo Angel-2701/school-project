@@ -82,10 +82,18 @@ exports.register = async (req, res) => {
     } = req.body;
 
     // Check if the user already exists
-    const existingUser = await User.findOne({ correo });
+    // Check if the user already exists by email
+    const existingUserByEmail = await User.findOne({ correo });
 
-    if (existingUser) {
-      return res.status(400).json({ error: "Email already exists" });
+    if (existingUserByEmail) {
+      return res.status(400).json({ error: "Correo ya existe" });
+    }
+
+    // Check if the user already exists by ID
+    const existingUserById = await User.findOne({ _id });
+
+    if (existingUserById) {
+      return res.status(400).json({ error: "ID ya existe" });
     }
 
     // Hash the password
@@ -211,6 +219,8 @@ exports.getStudents = async (req, res) => {
       seguimiento1: student.seguimiento1 ?? null,
       seguimiento2: student.seguimiento2 ?? null,
       seguimiento3: student.seguimiento3 ?? null,
+      archivosAsesorias: student.archivosAsesorias ?? [],
+      archivos: student.archivos ?? {},
     }));
 
     res.status(200).json(filteredStudents);

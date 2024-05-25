@@ -50,12 +50,11 @@
             </template>
             <!-- Projects Data -->
             <v-data-table
-              v-if="projects.length > 0"
               :items="projects"
               align="center"
               :search="search"
-              items-per-page-text = "Elementos por página"
-              pageText = ""
+              items-per-page-text="Elementos por página"
+              pageText=""
             >
               <template v-slot:top>
                 <v-toolbar flat color="blue darken-2">
@@ -354,7 +353,10 @@ export default {
           }
         })
         .catch((error) => {
-          console.error('Error creating project:', error)
+          if (error.response) {
+            // Display an error message to the user if the email already exists
+            alert(error.response.data.error)
+          }
         })
       this.createDialog = false
     },

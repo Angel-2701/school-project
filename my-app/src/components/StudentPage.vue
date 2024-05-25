@@ -197,7 +197,7 @@ export default {
       } else if (!this.file3Uploaded) {
         return 3
       } else {
-        return 'All'
+        return ''
       }
     },
     allFilesUploaded () {

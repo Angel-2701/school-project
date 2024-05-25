@@ -50,7 +50,6 @@
             </template>
             <!-- Students Data -->
             <v-data-table
-              v-if="studentsTable.length > 0"
               :items="studentsTable"
               align="center"
               :search="search"
@@ -88,6 +87,15 @@
                     <template v-else>
                       {{ value }}
                     </template>
+                  </td>
+                  <td>
+                    <v-btn
+                      small
+                      color="blue darken-2"
+                      @click="openFilesDialog(item, $event)"
+                    >
+                      Documentos
+                    </v-btn>
                   </td>
                   <td>
                     <v-btn
@@ -144,7 +152,10 @@
               v-model="student.correo"
               label="Correo electrónico"
               required
-              :rules="[(v) => !!v || 'Correo requerido']"
+              :rules="[
+                (v) => !!v || 'Correo requerido',
+                (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido',
+              ]"
             ></v-text-field>
             <v-select
               v-model="student.proyecto"
@@ -152,6 +163,7 @@
               label="Selecciona Proyecto"
               required
               :rules="[(v) => !!v || 'Proyecto requerido']"
+              @change="updateEmpresaField($event)"
             ></v-select>
             <v-text-field
               v-model="student.carrera"
@@ -188,7 +200,10 @@
               v-model="student.asesorExterno.correo"
               label="Correo Asesor externo"
               required
-              :rules="[(v) => !!v || 'Correo del asesor requerido']"
+              :rules="[
+                (v) => !!v || 'Correo del asesor requerido',
+                (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido',
+              ]"
             ></v-text-field>
             <v-text-field
               v-model="student.asesorExterno.telefono"
@@ -256,7 +271,10 @@
               v-model="student.correo"
               label="Correo Electrónico"
               required
-              :rules="[(v) => !!v || 'Correo requerido']"
+              :rules="[
+                (v) => !!v || 'Correo requerido',
+                (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido',
+              ]"
             ></v-text-field>
             <v-text-field
               v-model="student.contraseña"
@@ -272,6 +290,7 @@
               label="Selecciona proyecto"
               required
               :rules="[(v) => !!v || 'Proyecto requerido']"
+              @update:modelValue="updateEmpresaField"
             ></v-select>
             <v-text-field
               v-model="student.carrera"
@@ -291,6 +310,7 @@
               label="Empresa"
               required
               :rules="[(v) => !!v || 'Empresa requerida']"
+              readonly
             ></v-text-field>
             <v-text-field
               v-model="student.periodo"
@@ -308,7 +328,10 @@
               v-model="student.asesorExterno.correo"
               label="Correo Asesor externo"
               required
-              :rules="[(v) => !!v || 'Correo del asesor requerido']"
+              :rules="[
+                (v) => !!v || 'Correo del asesor requerido',
+                (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido',
+              ]"
             ></v-text-field>
             <v-text-field
               v-model="student.asesorExterno.telefono"
@@ -331,16 +354,27 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <FilesDialog
+        :isOpen="showFilesDialog"
+        :student="selectedStudent"
+        @update:isOpen="showFilesDialog = $event"
+      />
     </v-container>
   </v-app>
 </template>
 
 <script>
 import axios from 'axios'
+import FilesDialog from './FilesDialog.vue'
 
 export default {
+  components: {
+    FilesDialog
+  },
   data () {
     return {
+      selectedStudent: null,
+      showFilesDialog: false,
       studentsTable: [],
       students: [],
       projects: [],
@@ -424,6 +458,39 @@ export default {
   },
 
   methods: {
+    updateEmpresaField (selectedProjectName) {
+      const selectedProject = this.projects.find(
+        (project) => project.nombre === selectedProjectName
+      )
+      if (selectedProject) {
+        this.student.empresa = selectedProject.empresa || '' // Assuming the project object has an 'empresa' field
+      }
+    },
+    resetStudent () {
+      this.student = {
+        _id: '',
+        nombre: '',
+        apellido: '',
+        apellidoM: '',
+        correo: '',
+        project: '',
+        carrera: '',
+        numeroTelefonico: '',
+        empresa: '',
+        periodo: '',
+        asesorExterno: {
+          nombre: '',
+          telefono: '',
+          correo: ''
+        }
+        // Add more fields as needed
+      }
+    },
+    openFilesDialog (student, event) {
+      event.stopPropagation()
+      this.selectedStudent = this.students.find((s) => s._id === student._id)
+      this.showFilesDialog = true // Open the dialog with the student's files
+    },
     async fetchData () {
       try {
         const response = await axios.get('http://localhost:3000/students')
@@ -446,7 +513,8 @@ export default {
         // Extract IDs and names from the projects data
         this.projects = response.data.map((project) => ({
           id: project._id,
-          nombre: project.nombre
+          nombre: project.nombre,
+          empresa: project.empresa
         }))
       } catch (error) {
         console.error('Error fetching projects:', error)
@@ -513,6 +581,7 @@ export default {
       this.editDialog = false
     },
     openCreateDialog () {
+      this.resetStudent()
       this.createDialog = true
       // Fetch projects data when opening create dialog
       this.fetchProjects()
@@ -543,7 +612,10 @@ export default {
           console.error('Failed to create student:', response.data)
         }
       } catch (error) {
-        console.error('Error creating student:', error)
+        if (error.response) {
+          // Display an error message to the user if the email already exists
+          alert(error.response.data.error)
+        }
       }
       this.createDialog = false
     },

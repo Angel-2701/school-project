@@ -9,13 +9,13 @@
           <v-card-text>
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-text-field
-                label="Email"
+                label="Correo Electrónico"
                 v-model="email"
                 :rules="emailRules"
                 required
               ></v-text-field>
               <v-text-field
-                label="Password"
+                label="Contraseña"
                 v-model="password"
                 :rules="passwordRules"
                 type="password"
@@ -41,11 +41,11 @@ export default {
     valid: true,
     email: '',
     emailRules: [
-      (v) => !!v || 'E-mail is required',
-      (v) => /.+@.+\..+/.test(v) || 'E-mail must be valid'
+      (v) => !!v || 'Correo requerido',
+      (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido'
     ],
     password: '',
-    passwordRules: [(v) => !!v || 'Password is required']
+    passwordRules: [(v) => !!v || 'Contraseña requerida']
   }),
   methods: {
     async submit () {

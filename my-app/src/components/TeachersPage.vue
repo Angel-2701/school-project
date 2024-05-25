@@ -50,7 +50,6 @@
             </template>
             <!-- Teachers Data -->
             <v-data-table
-              v-if="teachers.length > 0"
               :items="teachers"
               align="center"
               :search="search"
@@ -264,7 +263,7 @@
               v-model="teacher.correo"
               label="Correo Electrónico"
               required
-              :rules="[(v) => !!v || 'Correo requerido']"
+              :rules="[(v) => !!v || 'Correo requerido', (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido']"
             ></v-text-field>
             <v-text-field
               v-model="teacher.contraseña"
@@ -539,7 +538,10 @@ export default {
           console.error('Failed to create teacher:', response.data)
         }
       } catch (error) {
-        console.error('Error creating teacher:', error)
+        if (error.response) {
+          // Display an error message to the user if the email already exists
+          alert(error.response.data.error)
+        }
       }
       this.createDialog = false
     },

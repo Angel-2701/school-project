@@ -82,6 +82,15 @@
                 <td>{{ item.carrera }}</td>
                 <td>{{ getProjectName(item.proyecto) }}</td>
                 <td>
+                  <v-btn
+                    small
+                    color="blue darken-2"
+                    @click="openFilesDialog(item, $event)"
+                  >
+                    Documentos
+                  </v-btn>
+                </td>
+                <td>
                   <!-- Use small prop to make the buttons smaller -->
                   <v-tooltip bottom>
                     <template v-slot:activator="{ on }">
@@ -184,9 +193,9 @@
         <v-card-text>
           <v-text-field
             v-model="selectedStudent.asesorias"
-            label="Número de asesorías (Max: 16)"
+            label="Número de asesorías (Min: 16)"
             type="number"
-            max="16"
+            :rules="[(v) => v >= 16 || 'Debe ingresar al menos 16 asesorías']"
           ></v-text-field>
         </v-card-text>
         <v-card-actions>
@@ -196,21 +205,38 @@
             @click="enableConsultanciesDialog = false"
             >Cancelar</v-btn
           >
-          <v-btn color="blue darken-1" text @click="enableConsultancies"
-            >Habilitar</v-btn
+          <v-btn
+            color="blue darken-1"
+            text
+            @click="enableConsultancies"
+            :disabled="isHabilitarDisabled"
           >
+            Habilitar
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <FilesDialog
+      :isOpen="showFilesDialog"
+      :student="selectedStudent"
+      @update:isOpen="showFilesDialog = $event"
+    />
   </v-app>
 </template>
 
 <script>
 import axios from 'axios'
+import FilesDialog from './FilesDialog.vue'
 
 export default {
+  components: {
+    FilesDialog
+  },
   data () {
     return {
+      selectedStudent: null,
+      showFilesDialog: false,
       id: localStorage.getItem('id'),
       userName: localStorage.getItem('userName'),
       editDialog: false,
@@ -236,8 +262,18 @@ export default {
         next(false) // Prevent component from rendering
       })
   },
+  computed: {
+    isHabilitarDisabled () {
+      return this.selectedStudent.asesorias < 16
+    }
+  },
 
   methods: {
+    openFilesDialog (student, event) {
+      event.stopPropagation()
+      this.selectedStudent = student
+      this.showFilesDialog = true // Open the dialog with the student's files
+    },
     async fetchData () {
       try {
         const [teacherResponse, studentsResponse, projectsResponse] =
