@@ -6,8 +6,8 @@
         <v-spacer></v-spacer>
       </v-card-title>
       <v-card-text>
-        <div class="grid-container">
-          <div class="grid-item">
+        <div class="flex-column">
+          <div class="flex-item">
             <div v-if="seguimientos.length > 0">
               <h3>Seguimientos</h3>
               <v-list>
@@ -48,80 +48,86 @@
             </div>
           </div>
 
-          <div class="grid-item">
-            <div v-if="asesorias.length > 0">
-              <h3>Asesorias</h3>
-              <v-list>
-                <v-list-item v-for="asesoria in asesorias" :key="asesoria._id">
-                  <v-list-item-icon>
-                    <v-icon>mdi-file-pdf</v-icon>
-                  </v-list-item-icon>
-                  <v-list-item-content>
-                    <v-list-item-title>{{
-                      asesoria.filename
-                    }}</v-list-item-title>
-                  </v-list-item-content>
-                  <v-list-item-action>
-                    <v-btn
-                      :href="
-                        'data:application/octet-stream;base64,' + asesoria.data
-                      "
-                      :download="asesoria.filename"
-                      color="blue darken-2"
-                      block
-                      small
-                    >
-                      Descargar
-                    </v-btn>
-                  </v-list-item-action>
-                </v-list-item>
-              </v-list>
+          <div class="flex-row">
+            <div class="flex-item">
+              <div v-if="Object.keys(archivos).length > 0">
+                <h3>Archivos</h3>
+                <v-list>
+                  <v-list-item
+                    v-for="(fileId, fileName) in archivos"
+                    :key="fileId"
+                  >
+                    <v-list-item-icon>
+                      <v-icon>mdi-file-pdf</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                      <v-list-item-title>{{ fileName }}</v-list-item-title>
+                      <v-list-item-title v-if="archivosDetails[fileId]">{{
+                        archivosDetails[fileId].filename
+                      }}</v-list-item-title>
+                    </v-list-item-content>
+                    <v-list-item-action>
+                      <v-btn
+                        :href="
+                          'data:application/octet-stream;base64,' +
+                          getArchivoData(fileId)
+                        "
+                        :download="
+                          archivosDetails[fileId]
+                            ? archivosDetails[fileId].filename
+                            : ''
+                        "
+                        color="blue darken-2"
+                        block
+                        small
+                      >
+                        Descargar
+                      </v-btn>
+                    </v-list-item-action>
+                  </v-list-item>
+                </v-list>
+              </div>
+              <div v-else>
+                <h3>No hay archivos</h3>
+              </div>
             </div>
-            <div v-else>
-              <h3>No hay asesorías</h3>
-            </div>
-          </div>
 
-          <div class="grid-item">
-            <div v-if="Object.keys(archivos).length > 0">
-              <h3>Archivos</h3>
-              <v-list>
-                <v-list-item
-                  v-for="(fileId, fileName) in archivos"
-                  :key="fileId"
-                >
-                  <v-list-item-icon>
-                    <v-icon>mdi-file-pdf</v-icon>
-                  </v-list-item-icon>
-                  <v-list-item-content>
-                    <v-list-item-title>{{ fileName }}</v-list-item-title>
-                    <v-list-item-title v-if="archivosDetails[fileId]">{{
-                      archivosDetails[fileId].filename
-                    }}</v-list-item-title>
-                  </v-list-item-content>
-                  <v-list-item-action>
-                    <v-btn
-                      :href="
-                        'data:application/octet-stream;base64,' +
-                        getArchivoData(fileId)
-                      "
-                      :download="
-                        archivosDetails[fileId]
-                          ? archivosDetails[fileId].filename
-                          : ''
-                      "
-                      color="blue darken-2"
-                      block
-                      small
-                    >
-                      Descargar
-                    </v-btn>
-                  </v-list-item-action>
-                </v-list-item>
-              </v-list>
-            </div>
-            <div v-else>
-              <h3>No hay archivos</h3>
+            <div class="flex-item">
+              <div v-if="asesorias.length > 0">
+                <h3>Asesorias</h3>
+                <v-list>
+                  <v-list-item
+                    v-for="asesoria in asesorias"
+                    :key="asesoria._id"
+                  >
+                    <v-list-item-icon>
+                      <v-icon>mdi-file-pdf</v-icon>
+                    </v-list-item-icon>
+                    <v-list-item-content>
+                      <v-list-item-title>{{
+                        asesoria.filename
+                      }}</v-list-item-title>
+                    </v-list-item-content>
+                    <v-list-item-action>
+                      <v-btn
+                        :href="
+                          'data:application/octet-stream;base64,' +
+                          asesoria.data
+                        "
+                        :download="asesoria.filename"
+                        color="blue darken-2"
+                        block
+                        small
+                      >
+                        Descargar
+                      </v-btn>
+                    </v-list-item-action>
+                  </v-list-item>
+                </v-list>
+              </div>
+              <div v-else>
+                <h3>No hay asesorías</h3>
+              </div>
             </div>
           </div>
         </div>
@@ -280,7 +286,19 @@ export default {
   grid-gap: 20px;
 }
 
-.grid-item {
-  /* Optional: Adjust styling for each grid item */
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.flex-item {
+  flex: 1;
+  margin: 0 10px;
 }
 </style>
