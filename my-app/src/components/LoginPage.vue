@@ -7,6 +7,9 @@
             <v-toolbar-title>Ingresa Credenciales</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
+            <v-alert v-if="alert" type="error" dismissible @click="alert = false">
+              Las credenciales son incorrectas
+            </v-alert>
             <v-form ref="form" v-model="valid" lazy-validation>
               <v-text-field
                 label="Correo Electrónico"
@@ -38,6 +41,7 @@ import axios from 'axios'
 
 export default {
   data: () => ({
+    alert: false,
     valid: true,
     email: '',
     emailRules: [
@@ -85,6 +89,7 @@ export default {
         }
       } catch (error) {
         console.error('Login error:', error.response.data.error)
+        this.alert = true
       }
     }
   }

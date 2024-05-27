@@ -93,9 +93,19 @@
                 @click="submitForm"
                 >Enviar</v-btn
               >
-              <v-btn color="primary" @click="downloadAllFiles"
+              <v-btn
+                :disabled="isDownloadDisabled"
+                color="primary"
+                @click="downloadAllFiles"
                 >Descargar todos los archivos</v-btn
               >
+              <v-progress-circular
+                v-if="isSubmitting"
+                indeterminate
+                color="blue darken-2"
+                size="24"
+                class="ml-2"
+              ></v-progress-circular>
             </v-card-actions>
           </v-card>
         </v-col>
@@ -112,6 +122,7 @@ import { saveAs } from 'file-saver'
 export default {
   data () {
     return {
+      isSubmitting: false,
       archivos: [
         {
           id: 1,
@@ -169,28 +180,46 @@ export default {
   computed: {
     isSubmitDisabled () {
       return this.archivos.some((archivo) => !archivo.file)
+    },
+    isDownloadDisabled () {
+      return !this.archivos.some((archivo) => archivo.submitted)
     }
   },
   methods: {
     async fetchArchivoData () {
       try {
+        // Fetch user data to get the mapping of files to fields
+        const userResponse = await axios.get(
+          `http://localhost:3000/users/${this.userId}`
+        )
+        const userArchivos = userResponse.data.archivos
+
+        // Fetch all files
         const response = await axios.get('http://localhost:3000/archivos')
         const files = response.data
-        // Update archivo objects with their data based on index
-        files.forEach((file, index) => {
-          if (this.archivos[index]) {
-            this.archivos[index].file = {
-              id: file._id,
-              filename: file.filename,
-              data: file.data // assuming 'data' contains the base64 string
+
+        // Iterate through each field in userArchivos to find the matching file from the files response
+        for (const [fieldName, fileId] of Object.entries(userArchivos)) {
+          const matchingFile = files.find((file) => file._id === fileId)
+          if (matchingFile) {
+            const matchingArchivo = this.archivos.find(
+              (archivo) => archivo.fieldName === fieldName
+            )
+            if (matchingArchivo) {
+              matchingArchivo.file = {
+                id: matchingFile._id,
+                filename: matchingFile.filename,
+                data: matchingFile.data // assuming 'data' contains the base64 string
+              }
+              matchingArchivo.submitted = true
             }
-            this.archivos[index].submitted = true
           }
-        })
+        }
       } catch (error) {
         console.error('Error fetching archivo data:', error)
       }
     },
+
     navigate (index) {
       switch (index) {
         case 0:
@@ -212,6 +241,7 @@ export default {
       this.$router.push('/login')
     },
     async submitForm () {
+      this.isSubmitting = true
       try {
         const formData = new FormData()
         const newFiles = []
@@ -290,6 +320,8 @@ export default {
       } catch (error) {
         // Handle any errors that occur during the submission process
         console.error('Error submitting files:', error)
+      } finally {
+        this.isSubmitting = false
       }
     },
 

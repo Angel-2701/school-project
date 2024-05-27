@@ -194,12 +194,14 @@
               v-model="student.asesorExterno.nombre"
               label="Nombre Asesor externo"
               required
+              readonly
               :rules="[(v) => !!v || 'Nombre del Asesor requerido']"
             ></v-text-field>
             <v-text-field
               v-model="student.asesorExterno.correo"
               label="Correo Asesor externo"
               required
+              readonly
               :rules="[
                 (v) => !!v || 'Correo del asesor requerido',
                 (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido',
@@ -210,6 +212,7 @@
               label="Número telefónico asesor externo"
               type="number"
               required
+              readonly
               :rules="[(v) => !!v || 'Número telefónico del asesor requerido']"
             ></v-text-field>
             <!-- Add more fields as needed -->
@@ -322,12 +325,14 @@
               v-model="student.asesorExterno.nombre"
               label="Nombre Asesor externo"
               required
+              readonly
               :rules="[(v) => !!v || 'Nombre del Asesor requerido']"
             ></v-text-field>
             <v-text-field
               v-model="student.asesorExterno.correo"
               label="Correo Asesor externo"
               required
+              readonly
               :rules="[
                 (v) => !!v || 'Correo del asesor requerido',
                 (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido',
@@ -338,6 +343,7 @@
               label="Número telefónico de asesor externo"
               type="number"
               required
+              readonly
               :rules="[(v) => !!v || 'Número telefónico de asesor requerido']"
             ></v-text-field>
 
@@ -464,6 +470,17 @@ export default {
       )
       if (selectedProject) {
         this.student.empresa = selectedProject.empresa || '' // Assuming the project object has an 'empresa' field
+        const userWithSelectedProject = this.students.find(
+          (s) => s.proyecto === selectedProject.id
+        )
+        if (userWithSelectedProject) {
+          const {
+            nombre = '',
+            correo,
+            telefono
+          } = userWithSelectedProject.asesorExterno
+          this.student.asesorExterno = { nombre, correo, telefono }
+        }
       }
     },
     resetStudent () {
