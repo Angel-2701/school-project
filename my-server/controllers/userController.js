@@ -3,6 +3,8 @@ const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
 
 // Function to handle user login
 exports.login = async (req, res) => {
@@ -56,6 +58,26 @@ exports.getUserById = async (req, res) => {
     res.status(200).json(user);
   } catch (error) {
     console.error("Error fetching user by ID:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Function to get a user by email
+exports.getUserByCorreo = async (req, res) => {
+  try {
+    const correo = req.params.correo;
+
+    // Find the user by their email, excluding the 'contraseña' property
+    const user = await User.findOne({ correo }).select("-contraseña");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // If user is found, send it in the response
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user by email:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -138,6 +160,12 @@ exports.updateUser = async (req, res) => {
   try {
     const userId = req.params.id;
     const newData = req.body;
+
+    // Check if the request includes a new password
+    if (newData.contraseña) {
+      // Hash the new password
+      newData.contraseña = await bcrypt.hash(newData.contraseña, 10);
+    }
 
     // Find the user by ID and update it with the new data
     const updatedUser = await User.findByIdAndUpdate(userId, newData, {

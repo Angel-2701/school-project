@@ -11,6 +11,14 @@ const multer = require("multer");
 const { GridFsStorage } = require("multer-gridfs-storage");
 const Grid = require("gridfs-stream");
 const { MongoClient, GridFSBucket, ObjectId } = require("mongodb");
+const twilio = require("twilio");
+
+// Replace these values with your Twilio Account SID and Auth Token
+const accountSid = "AC6f8cecb0eaf12d04eeb812a68f9b18fa";
+const authToken = "157788d0b92831c7be31565cb81f4341";
+
+// Initialize Twilio client with your credentials
+const client2 = twilio(accountSid, authToken);
 
 // Import controllers
 const userController = require("./controllers/userController");
@@ -107,6 +115,7 @@ app.post("/register", userController.register);
 
 // Route for fetching a user by ID
 app.get("/users/:id", userController.getUserById);
+app.get("/users/email/:correo", userController.getUserByCorreo);
 app.put("/users/:id", userController.updateUser);
 app.delete("/users/:id", userController.deleteUser);
 
@@ -483,6 +492,44 @@ app.get("/files/:fileId", async (req, res) => {
   } catch (error) {
     console.error("Error fetching file from MongoDB:", error);
     res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+});
+
+// Define a route to send an SMS message
+// Define a route to send an SMS message
+app.post("/send-sms", (req, res) => {
+  // Generate a random code
+  const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Replace 'recipient_phone_number' with the actual recipient's phone number
+  client2.messages
+    .create({
+      body: `Your verification code is: ${randomCode}`, // Include the random code in the message body
+      from: "+12232714251",
+      to: req.body.phone, // Assuming the phone number is sent in the request body
+    })
+    .then((message) => {
+      console.log("Message sent:", message.sid);
+      res.json({ success: true, code: randomCode }); // Send the random code back to the frontend
+    })
+    .catch((error) => {
+      console.error("Error sending message:", error);
+      res
+        .status(500)
+        .json({ success: false, message: "Failed to send message" });
+    });
+});
+
+// Define a route to verify the entered code
+app.post("/verify-code", (req, res) => {
+  const enteredCode = req.body.code; // Assuming the entered code is sent in the request body
+  const sentCode = req.body.sentCode; // Assuming the sent code is sent in the request body
+  if (enteredCode === sentCode) {
+    res.json({ success: true, message: "Code verification successful" });
+  } else {
+    res
+      .status(400)
+      .json({ success: false, message: "Invalid verification code" });
   }
 });
 
