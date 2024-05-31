@@ -59,7 +59,7 @@
                 <v-toolbar-title>{{ selectedProject.nombre }}</v-toolbar-title>
                 <v-divider class="mx-4" inset vertical></v-divider>
                 <v-spacer></v-spacer>
-                <v-btn @click="downloadAsExcel">Download as Excel</v-btn>
+                <v-btn @click="downloadAsExcel">Descargar como Excel</v-btn>
                 <!-- Removed the button for creating a new project -->
               </v-toolbar>
             </template>

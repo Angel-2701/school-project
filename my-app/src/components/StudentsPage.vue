@@ -62,7 +62,7 @@
                   <v-divider class="mx-4" inset vertical></v-divider>
                   <v-spacer></v-spacer>
                   <!-- Button to download data as Excel -->
-                  <v-btn @click="downloadAsExcel">Download as Excel</v-btn>
+                  <v-btn @click="downloadAsExcel">Descargar como Excel</v-btn>
                   <v-btn icon color="blue darken-2" @click="openCreateDialog">
                     <v-icon>mdi-plus</v-icon>
                   </v-btn>
