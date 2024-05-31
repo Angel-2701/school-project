@@ -14,7 +14,8 @@ const { MongoClient, GridFSBucket, ObjectId } = require("mongodb");
 const twilio = require("twilio");
 
 // Replace these values with your Twilio Account SID and Auth Token
-
+const accountSid = "AC6f8cecb0eaf12d04eeb812a68f9b18fa";
+const authToken = "157788d0b92831c7be31565cb81f4341";
 // Initialize Twilio client with your credentials
 const client2 = twilio(accountSid, authToken);
 

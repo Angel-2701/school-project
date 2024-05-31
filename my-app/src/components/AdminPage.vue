@@ -50,7 +50,7 @@
             </template>
             <!-- Projects Data -->
             <v-data-table
-              :items="projects"
+              :items="filteredProjects"
               align="center"
               :search="search"
               items-per-page-text="Elementos por página"
@@ -117,6 +117,28 @@
               required
               :rules="[(v) => !!v || 'Empresa requerida']"
             ></v-text-field>
+            <v-text-field
+              v-model="asesorExterno.nombre"
+              label="Nombre Asesor externo"
+              required
+              :rules="[(v) => !!v || 'Nombre del Asesor requerido']"
+            ></v-text-field>
+            <v-text-field
+              v-model="asesorExterno.correo"
+              label="Correo Asesor externo"
+              required
+              :rules="[
+                (v) => !!v || 'Correo del asesor requerido',
+                (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido',
+              ]"
+            ></v-text-field>
+            <v-text-field
+              v-model="asesorExterno.telefono"
+              label="Número telefónico asesor externo"
+              type="number"
+              required
+              :rules="[(v) => !!v || 'Número telefónico del asesor requerido']"
+            ></v-text-field>
           </v-card-text>
           <v-card-actions>
             <v-btn
@@ -155,6 +177,28 @@
               label="Empresa"
               required
               :rules="[(v) => !!v || 'Empresa requerida']"
+            ></v-text-field>
+            <v-text-field
+              v-model="newProject.asesorExterno.nombre"
+              label="Nombre Asesor externo"
+              required
+              :rules="[(v) => !!v || 'Nombre del Asesor requerido']"
+            ></v-text-field>
+            <v-text-field
+              v-model="newProject.asesorExterno.correo"
+              label="Correo Asesor externo"
+              required
+              :rules="[
+                (v) => !!v || 'Correo del asesor requerido',
+                (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido',
+              ]"
+            ></v-text-field>
+            <v-text-field
+              v-model="newProject.asesorExterno.telefono"
+              label="Número telefónico asesor externo"
+              type="number"
+              required
+              :rules="[(v) => !!v || 'Número telefónico del asesor requerido']"
             ></v-text-field>
           </v-card-text>
           <v-card-actions>
@@ -195,12 +239,30 @@ export default {
       newProject: {
         nombre: '',
         empresa: '',
-        _id: ''
+        _id: '',
+        asesorExterno: {
+          nombre: '',
+          telefono: '',
+          correo: ''
+        }
       },
-      search: ''
+      search: '',
+      asesorExterno: {
+        nombre: '',
+        telefono: '',
+        correo: ''
+      }
     }
   },
   computed: {
+    filteredProjects () {
+      return this.projects
+        .map((project) => {
+          const { asesorExterno, ...filteredProject } = project
+          return filteredProject
+        })
+        .reverse()
+    },
     // Compute whether the "Save" button should be disabled
     isEditSaveDisabled () {
       // Check if any required field is empty or invalid
@@ -208,7 +270,14 @@ export default {
     },
     isSaveDisabled () {
       // Check if any required field is empty or invalid
-      return !this.isIdValid() || !this.isNameValid() || !this.isCompanyValid()
+      return (
+        !this.isIdValid() ||
+        !this.isNameValid() ||
+        !this.isCompanyValid() ||
+        !this.isAsesorNombreValid() ||
+        !this.isAsesorCorreoValid() ||
+        !this.isAsesorTelefonoValid()
+      )
     }
   },
   methods: {
@@ -220,6 +289,18 @@ export default {
     },
     isCompanyValid () {
       return !!this.newProject.empresa
+    },
+    isAsesorNombreValid () {
+      return !!this.newProject.asesorExterno.nombre
+    },
+    isAsesorCorreoValid () {
+      return (
+        !!this.newProject.asesorExterno.correo &&
+        /.+@.+\..+/.test(this.newProject.asesorExterno.correo)
+      )
+    },
+    isAsesorTelefonoValid () {
+      return !!this.newProject.asesorExterno.telefono
     },
     isEditNameValid () {
       return !!this.editedProjectName
@@ -238,10 +319,12 @@ export default {
           const firstProject = this.projects[0]
 
           // Extract keys from the first project and capitalize them
-          const keys = Object.keys(firstProject).map((key) => ({
-            text: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize first letter
-            value: key
-          }))
+          const keys = Object.keys(firstProject)
+            .filter((key) => key !== 'asesorExterno')
+            .map((key) => ({
+              text: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize first letter
+              value: key
+            }))
 
           // Set the tableHeaders property with the generated headers
           this.tableHeaders = keys
@@ -281,6 +364,9 @@ export default {
       this.editedProjectName = project.nombre
       this.editedProjectId = project._id
       this.editedProjectCompany = project.empresa
+      this.asesorExterno.nombre = project.asesorExterno.nombre
+      this.asesorExterno.telefono = project.asesorExterno.telefono
+      this.asesorExterno.correo = project.asesorExterno.correo
       this.editDialog = true
     },
 
@@ -288,7 +374,8 @@ export default {
       // Create an object with the updated project data
       const updatedProject = {
         nombre: this.editedProjectName, // Assuming the only editable field is the project name
-        empresa: this.editedProjectCompany
+        empresa: this.editedProjectCompany,
+        asesorExterno: this.asesorExterno
       }
 
       // Make an HTTP PUT request to update the project
@@ -318,7 +405,7 @@ export default {
 
     deleteProject (project) {
       // Prompt the user for confirmation before deleting the project
-      if (confirm('Are you sure you want to delete this project?')) {
+      if (confirm('¿Estás seguro que deseas borrar este proyecto?')) {
         // Make an HTTP DELETE request to delete the project
         axios
           .delete(`http://localhost:3000/projects/${project._id}`)

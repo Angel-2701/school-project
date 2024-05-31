@@ -19,7 +19,8 @@
     "vue-router": "^4.0.3",
     "vuetify": "^3.5.1",
     "vuex": "^4.0.0",
-    "webfontloader": "^1.0.0"
+    "webfontloader": "^1.0.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

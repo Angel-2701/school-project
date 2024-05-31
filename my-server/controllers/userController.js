@@ -249,6 +249,7 @@ exports.getStudents = async (req, res) => {
       seguimiento3: student.seguimiento3 ?? null,
       archivosAsesorias: student.archivosAsesorias ?? [],
       archivos: student.archivos ?? {},
+      promedio: student.promedio ?? 0,
     }));
 
     res.status(200).json(filteredStudents);

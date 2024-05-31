@@ -263,7 +263,10 @@
               v-model="teacher.correo"
               label="Correo Electrónico"
               required
-              :rules="[(v) => !!v || 'Correo requerido', (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido']"
+              :rules="[
+                (v) => !!v || 'Correo requerido',
+                (v) => /.+@.+\..+/.test(v) || 'Correo debe ser válido',
+              ]"
             ></v-text-field>
             <v-text-field
               v-model="teacher.contraseña"
@@ -400,7 +403,7 @@ export default {
     async fetchData () {
       try {
         const response = await axios.get('http://localhost:3000/teachers')
-        this.teachers = response.data
+        this.teachers = response.data.reverse()
       } catch (error) {
         console.error('Error fetching teachers:', error)
       }
@@ -551,14 +554,16 @@ export default {
     },
     async deleteTeacher (teacherId, event) {
       event.stopPropagation()
-      try {
-        const response = await axios.delete(
-          `http://localhost:3000/users/${teacherId}`
-        )
-        console.log('Teacher deleted successfully:', response.data)
-        this.fetchData() // Call a method to update the UI or fetch updated data
-      } catch (error) {
-        console.error('Error deleting teacher:', error)
+      if (confirm('¿Estás seguro que deseas borrar este maestro?')) {
+        try {
+          const response = await axios.delete(
+            `http://localhost:3000/users/${teacherId}`
+          )
+          console.log('Teacher deleted successfully:', response.data)
+          this.fetchData() // Call a method to update the UI or fetch updated data
+        } catch (error) {
+          console.error('Error deleting teacher:', error)
+        }
       }
     },
 

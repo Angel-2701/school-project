@@ -22,19 +22,26 @@ const userSchema = new mongoose.Schema({
   calificaciones: {
     calificacion1: {
       type: Number,
+      default: 0,
       min: 0,
       max: 10,
     },
     calificacion2: {
       type: Number,
+      default: 0,
       min: 0,
       max: 10,
     },
     calificacion3: {
       type: Number,
+      default: 0,
       min: 0,
       max: 10,
     },
+  },
+  promedio: {
+    type: Number,
+    default: 0,
   },
   asesorias: Number,
   numeroTelefonico: Number,

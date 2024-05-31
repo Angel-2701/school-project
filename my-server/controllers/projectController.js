@@ -56,7 +56,7 @@ exports.deleteProject = async (req, res) => {
 exports.createProject = async (req, res) => {
   try {
     // Extract project data from the request body
-    const { empresa, nombre, _id } = req.body;
+    const { empresa, nombre, _id, asesorExterno } = req.body;
 
     const existingProject = await Project.findOne({ _id });
 
@@ -69,6 +69,7 @@ exports.createProject = async (req, res) => {
       empresa,
       nombre,
       _id,
+      asesorExterno,
     });
 
     // Save the new project to the database

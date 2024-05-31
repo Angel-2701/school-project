@@ -50,7 +50,7 @@
             </template>
             <!-- Students Data -->
             <v-data-table
-              :items="studentsTable"
+              :items="filteredStudents"
               align="center"
               :search="search"
               items-per-page-text="Elementos por página"
@@ -61,6 +61,8 @@
                   <v-toolbar-title>Alumnos</v-toolbar-title>
                   <v-divider class="mx-4" inset vertical></v-divider>
                   <v-spacer></v-spacer>
+                  <!-- Button to download data as Excel -->
+                  <v-btn @click="downloadAsExcel">Download as Excel</v-btn>
                   <v-btn icon color="blue darken-2" @click="openCreateDialog">
                     <v-icon>mdi-plus</v-icon>
                   </v-btn>
@@ -74,6 +76,7 @@
                   <th>{{ "Apellido Materno" }}</th>
                   <th>{{ "Carrera" }}</th>
                   <th>{{ "Proyecto" }}</th>
+                  <th>{{ "Calificación Final" }}</th>
                   <!-- Exclude numeroTelefonico from the headers -->
                 </tr>
               </template>
@@ -181,6 +184,7 @@
             <v-text-field
               v-model="student.empresa"
               label="Empresa"
+              readonly
               required
               :rules="[(v) => !!v || 'Empresa requerida']"
             ></v-text-field>
@@ -372,6 +376,7 @@
 <script>
 import axios from 'axios'
 import FilesDialog from './FilesDialog.vue'
+import * as XLSX from 'xlsx' // Import XLSX library
 
 export default {
   components: {
@@ -379,6 +384,7 @@ export default {
   },
   data () {
     return {
+      excelFileName: 'alumnos.xlsx',
       selectedStudent: null,
       showFilesDialog: false,
       studentsTable: [],
@@ -416,6 +422,19 @@ export default {
     }
   },
   computed: {
+    filteredStudents () {
+      return this.studentsTable.map((student) => {
+        // Destructure and exclude specific fields
+        const {
+          calificacion1,
+          calificacion2,
+          calificacion3,
+          ...studentWithoutCalificaciones
+        } = student
+        return studentWithoutCalificaciones
+      })
+    },
+
     isCreateFormValid () {
       // Check if the form reference exists
       if (!this.$refs.createDialogForm) {
@@ -464,23 +483,37 @@ export default {
   },
 
   methods: {
+    downloadAsExcel () {
+      // Filter the students data based on the search term
+      const filteredStudents = this.studentsTable.filter((student) =>
+        Object.values(student).some((value) =>
+          String(value).toLowerCase().includes(this.search.toLowerCase())
+        )
+      )
+      const excelData = filteredStudents.map(
+        ({ carrera, proyecto, promedio, ...rest }) => ({
+          ...rest,
+          calificacion1: rest.calificacion1 || '',
+          calificacion2: rest.calificacion2 || '',
+          calificacion3: rest.calificacion3 || '',
+          promedio
+        })
+      )
+
+      const ws = XLSX.utils.json_to_sheet(excelData) // Convert data to worksheet
+      const wb = XLSX.utils.book_new() // Create a new workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Alumnos') // Add the worksheet to the workbook
+      XLSX.writeFile(wb, this.excelFileName) // Save the workbook as Excel file with the specified name
+    },
     updateEmpresaField (selectedProjectName) {
       const selectedProject = this.projects.find(
         (project) => project.nombre === selectedProjectName
       )
       if (selectedProject) {
         this.student.empresa = selectedProject.empresa || '' // Assuming the project object has an 'empresa' field
-        const userWithSelectedProject = this.students.find(
-          (s) => s.proyecto === selectedProject.id
-        )
-        if (userWithSelectedProject) {
-          const {
-            nombre = '',
-            correo,
-            telefono
-          } = userWithSelectedProject.asesorExterno
-          this.student.asesorExterno = { nombre, correo, telefono }
-        }
+
+        const { nombre = '', correo, telefono } = selectedProject.asesorExterno
+        this.student.asesorExterno = { nombre, correo, telefono }
       }
     },
     resetStudent () {
@@ -512,14 +545,20 @@ export default {
       try {
         const response = await axios.get('http://localhost:3000/students')
         this.students = response.data
-        this.studentsTable = response.data.map((student) => ({
-          _id: student._id,
-          nombre: student.nombre,
-          apellido: student.apellido,
-          apellidoM: student.apellidoM,
-          carrera: student.carrera,
-          project: student.proyecto
-        }))
+        this.studentsTable = response.data
+          .map((student) => ({
+            _id: student._id,
+            nombre: student.nombre,
+            apellidoP: student.apellido,
+            apellidoM: student.apellidoM,
+            carrera: student.carrera,
+            proyecto: student.proyecto,
+            promedio: student.promedio,
+            calificacion1: student.calificaciones.calificacion1,
+            calificacion2: student.calificaciones.calificacion2,
+            calificacion3: student.calificaciones.calificacion3
+          }))
+          .reverse()
       } catch (error) {
         console.error('Error fetching students:', error)
       }
@@ -531,7 +570,8 @@ export default {
         this.projects = response.data.map((project) => ({
           id: project._id,
           nombre: project.nombre,
-          empresa: project.empresa
+          empresa: project.empresa,
+          asesorExterno: project.asesorExterno
         }))
       } catch (error) {
         console.error('Error fetching projects:', error)
@@ -642,14 +682,16 @@ export default {
     },
     async deleteUser (userId, event) {
       event.stopPropagation() // Stop event propagation
-      try {
-        const response = await axios.delete(
-          `http://localhost:3000/users/${userId}`
-        )
-        console.log('User deleted successfully:', response.data)
-        this.fetchData() // Call a method to update the UI or fetch updated data
-      } catch (error) {
-        console.error('Error deleting user:', error)
+      if (confirm('¿Estás seguro que deseas borrar este alumno?')) {
+        try {
+          const response = await axios.delete(
+            `http://localhost:3000/users/${userId}`
+          )
+          console.log('User deleted successfully:', response.data)
+          this.fetchData() // Call a method to update the UI or fetch updated data
+        } catch (error) {
+          console.error('Error deleting user:', error)
+        }
       }
     },
 

@@ -59,6 +59,7 @@
                 <v-toolbar-title>{{ selectedProject.nombre }}</v-toolbar-title>
                 <v-divider class="mx-4" inset vertical></v-divider>
                 <v-spacer></v-spacer>
+                <v-btn @click="downloadAsExcel">Download as Excel</v-btn>
                 <!-- Removed the button for creating a new project -->
               </v-toolbar>
             </template>
@@ -144,7 +145,7 @@
                 type="number"
                 :rules="[
                   (v) =>
-                    (v >= 1 && v <= 100) || 'Debe ser un número entre 1 y 100',
+                    (v >= 0 && v <= 100) || 'Debe ser un número entre 1 y 100',
                 ]"
               ></v-text-field>
             </v-col>
@@ -156,7 +157,7 @@
                 type="number"
                 :rules="[
                   (v) =>
-                    (v >= 1 && v <= 100) || 'Debe ser un número entre 1 y 100',
+                    (v >= 0 && v <= 100) || 'Debe ser un número entre 1 y 100',
                 ]"
               ></v-text-field>
             </v-col>
@@ -168,7 +169,7 @@
                 type="number"
                 :rules="[
                   (v) =>
-                    (v >= 1 && v <= 100) || 'Debe ser un número entre 1 y 100',
+                    (v >= 0 && v <= 100) || 'Debe ser un número entre 1 y 100',
                 ]"
               ></v-text-field>
             </v-col>
@@ -228,6 +229,7 @@
 <script>
 import axios from 'axios'
 import FilesDialog from './FilesDialog.vue'
+import * as XLSX from 'xlsx' // Import XLSX library
 
 export default {
   components: {
@@ -235,6 +237,7 @@ export default {
   },
   data () {
     return {
+      excelFileName: 'alumnos.xlsx',
       selectedStudent: null,
       showFilesDialog: false,
       id: localStorage.getItem('id'),
@@ -269,6 +272,33 @@ export default {
   },
 
   methods: {
+    downloadAsExcel () {
+      const filteredStudents = this.users.filter((s) =>
+        Object.values(s).some((value) =>
+          String(value).toLowerCase().includes(this.search.toLowerCase())
+        )
+      )
+      const data = filteredStudents.map((user) => ({
+        id: user._id,
+        nombre: user.nombre,
+        apellidoP: user.apellido,
+        apellidoM: user.apellidoM,
+        calificacion1: user.calificaciones
+          ? user.calificaciones.calificacion1
+          : 0,
+        calificacion2: user.calificaciones
+          ? user.calificaciones.calificacion2
+          : 0,
+        calificacion3: user.calificaciones
+          ? user.calificaciones.calificacion3
+          : 0,
+        promedio: user.promedio || 0
+      }))
+      const ws = XLSX.utils.json_to_sheet(data)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Alumnos')
+      XLSX.writeFile(wb, this.excelFileName)
+    },
     openFilesDialog (student, event) {
       event.stopPropagation()
       this.selectedStudent = student
@@ -298,9 +328,9 @@ export default {
 
         this.projects = filteredProjects
         this.students = teacherStudents
-        this.users = this.students.filter(
-          (student) => student.proyecto === this.selectedProject._id
-        )
+        this.users = this.students
+          .filter((student) => student.proyecto === this.selectedProject._id)
+          .reverse()
       } catch (error) {
         console.error('Error fetching data:', error)
       }
@@ -321,6 +351,31 @@ export default {
 
     async saveGrades () {
       try {
+        // Assign default value of 0 to calificaciones if they don't exist
+        if (!this.selectedUser.calificaciones) {
+          this.selectedUser.calificaciones = {}
+        }
+
+        if (!this.selectedUser.calificaciones.calificacion1) {
+          this.selectedUser.calificaciones.calificacion1 = 0
+        }
+
+        if (!this.selectedUser.calificaciones.calificacion2) {
+          this.selectedUser.calificaciones.calificacion2 = 0
+        }
+
+        if (!this.selectedUser.calificaciones.calificacion3) {
+          this.selectedUser.calificaciones.calificacion3 = 0
+        }
+
+        // Calculate calificacionFinal
+        const calificacionFinal =
+          0.1 * this.selectedUser.calificaciones.calificacion1 +
+          0.1 * this.selectedUser.calificaciones.calificacion2 +
+          0.8 * this.selectedUser.calificaciones.calificacion3
+
+        // Update selectedUser with calificacionFinal
+        this.selectedUser.promedio = calificacionFinal
         const response = await axios.put(
           `http://localhost:3000/users/${this.selectedUser._id}`,
           this.selectedUser

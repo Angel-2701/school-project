@@ -13,6 +13,11 @@ const projectSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    asesorExterno: {
+      nombre: String,
+      correo: String,
+      telefono: Number,
+    },
   },
   { versionKey: false } // Disable versioning
 );
