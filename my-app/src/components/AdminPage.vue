@@ -68,9 +68,9 @@
               </template>
               <template v-slot:item="{ item }">
                 <tr @click="handleRowClick(item)" class="clickable-row">
-                  <td v-for="(value, key) in item" :key="key">
-                    {{ value }}
-                  </td>
+                  <td>{{ item._id }}</td>
+                  <td>{{ item.nombre }}</td>
+                  <td>{{ item.empresa }}</td>
                   <td>
                     <!-- Use small prop to make the buttons smaller -->
                     <v-btn
@@ -256,12 +256,7 @@ export default {
   },
   computed: {
     filteredProjects () {
-      return this.projects
-        .map((project) => {
-          const { asesorExterno, ...filteredProject } = project
-          return filteredProject
-        })
-        .reverse()
+      return this.projects.slice().reverse() // Keep the original project data intact, just reverse the order
     },
     // Compute whether the "Save" button should be disabled
     isEditSaveDisabled () {
