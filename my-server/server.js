@@ -34,11 +34,9 @@ app.use(
 );
 
 // Parse JSON request body
-app.use(bodyParser.json());
-app.use(methodOverride("_method"));
-
 // Middleware to parse JSON bodies
 app.use(express.json());
+app.use(methodOverride("_method"));
 
 // Establish MongoDB connection
 mongoose
@@ -51,11 +49,6 @@ mongoose
   .catch((err) => {
     console.error("Error connecting to MongoDB:", err);
   });
-
-// Parse JSON request body
-app.use(bodyParser.json());
-app.use(methodOverride("_method"));
-app.use(express.json());
 
 const conn = mongoose.createConnection(MONGODB_URI);
 
